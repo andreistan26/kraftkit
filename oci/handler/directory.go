@@ -573,6 +573,52 @@ func (handle *DirectoryHandler) PullDigest(ctx context.Context, mediaType, fullr
 	return nil
 }
 
+// ListDigests implements DigestLister.
+func (handle *DirectoryHandler) ListDigests(ctx context.Context) ([]digest.Digest, error) {
+	digestsDir := filepath.Join(handle.path, DirectoryHandlerDigestsDir)
+	dgsts := []digest.Digest{}
+
+	// Create the manifest directory if it does not exist and return nil, since
+	// there's nothing to return.
+	if _, err := os.Stat(digestsDir); err != nil && os.IsNotExist(err) {
+		if err := os.MkdirAll(digestsDir, 0o775); err != nil {
+			return nil, fmt.Errorf("could not create local oci cache directory: %w", err)
+		}
+
+		return nil, nil
+	}
+
+	// Since the directory structure is nested, recursively walk the manifest
+	// directory to find all manifest entries.
+	if err := filepath.WalkDir(digestsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+
+		split := strings.Split(path, string(filepath.Separator))
+		if len(split) < 2 {
+			return nil
+		}
+
+		algo := split[len(split)-2]
+		enco := split[len(split)-1]
+
+		// Append to the list of digests
+		dgsts = append(dgsts, digest.Digest(fmt.Sprintf("%s:%s", algo, enco)))
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("could not walk manifests directory: %w", err)
+	}
+
+	return dgsts, nil
+}
+
 // SaveDescriptor implements DescriptorSaver.
 func (handle *DirectoryHandler) SaveDescriptor(ctx context.Context, ref string, desc ocispec.Descriptor, reader io.Reader, onProgress func(float64)) error {
 	blobPath := filepath.Join(

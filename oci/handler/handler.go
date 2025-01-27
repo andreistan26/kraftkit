@@ -45,6 +45,10 @@ type ManifestLister interface {
 	ListManifests(context.Context) (map[string]*ocispec.Manifest, error)
 }
 
+type DigestLister interface {
+	ListDigests(context.Context) ([]digest.Digest, error)
+}
+
 type ManifestResolver interface {
 	ResolveManifest(context.Context, string, digest.Digest) (*ocispec.Manifest, *ocispec.Image, error)
 }
@@ -72,6 +76,7 @@ type ImageUnpacker interface {
 type Handler interface {
 	DigestResolver
 	DigestPuller
+	DigestLister
 	DescriptorSaver
 	DescriptorPusher
 	ManifestLister
