@@ -906,7 +906,7 @@ func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*
 		}
 
 		// Append the manifest to the list
-		manifests[digest.FromBytes(rawManifest).String()] = &manifest
+		manifests[filepath.Base(path)] = &manifest
 
 		return nil
 	}); err != nil {
