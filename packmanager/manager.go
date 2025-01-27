@@ -45,6 +45,9 @@ type PackageManager interface {
 	// Delete package(s) from the package manager
 	Delete(context.Context, ...QueryOption) error
 
+	// Remove everything from the package manager.
+	Purge(context.Context) error
+
 	// Remove a source from the package manager
 	RemoveSource(context.Context, string) error
 

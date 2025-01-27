@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"time"
@@ -279,6 +280,11 @@ func (m *ManifestManager) Delete(ctx context.Context, qopts ...packmanager.Query
 	}
 
 	return errors.Join(errs...)
+}
+
+// Purge implements packmanager.PackageManager.
+func (m *ManifestManager) Purge(ctx context.Context) error {
+	return os.RemoveAll(m.LocalManifestIndex(ctx))
 }
 
 func (m *ManifestManager) RemoveSource(ctx context.Context, source string) error {

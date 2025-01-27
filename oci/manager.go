@@ -718,6 +718,46 @@ func (manager *OCIManager) Delete(ctx context.Context, qopts ...packmanager.Quer
 	return errors.Join(errs...)
 }
 
+// Purge implements packmanager.PackageManager.
+func (manager *OCIManager) Purge(ctx context.Context) error {
+	ctx, handler, err := manager.handle(ctx)
+	if err != nil {
+		return fmt.Errorf("could not initialize handler: %w", err)
+	}
+
+	indexes, err := handler.ListIndexes(ctx)
+	if err != nil {
+		return fmt.Errorf("could not list indexes: %w", err)
+	}
+
+	for ref := range indexes {
+		log.G(ctx).
+			WithField("ref", ref).
+			Trace("deleting")
+
+		if err := handler.DeleteIndex(ctx, ref, true); err != nil {
+			return fmt.Errorf("could not delete index %s: %w", ref, err)
+		}
+	}
+
+	dgsts, err := handler.ListDigests(ctx)
+	if err != nil {
+		return fmt.Errorf("could not list digests: %w", err)
+	}
+
+	for _, dgst := range dgsts {
+		log.G(ctx).
+			WithField("digest", dgst.String()).
+			Trace("deleting")
+
+		if err := handler.DeleteDigest(ctx, dgst); err != nil {
+			return fmt.Errorf("could not delete digest %s: %w", dgst, err)
+		}
+	}
+
+	return nil
+}
+
 // RemoveSource implements packmanager.PackageManager
 func (manager *OCIManager) RemoveSource(ctx context.Context, source string) error {
 	for i, needle := range manager.registries {
