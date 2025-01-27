@@ -619,6 +619,26 @@ func (handle *DirectoryHandler) ListDigests(ctx context.Context) ([]digest.Diges
 	return dgsts, nil
 }
 
+// DeleteDigest implements DigestDeleter.
+func (handle *DirectoryHandler) DeleteDigest(ctx context.Context, dgst digest.Digest) error {
+	digestPath := filepath.Join(
+		handle.path,
+		DirectoryHandlerDigestsDir,
+		dgst.Algorithm().String(),
+		dgst.Encoded(),
+	)
+
+	if err := os.Remove(digestPath); err != nil {
+		return fmt.Errorf("could not remove digest: %w", err)
+	}
+
+	if err := removeEmptyDirs(handle.path, handle.path); err != nil {
+		return fmt.Errorf("could not remove empty parent directories: %w", err)
+	}
+
+	return nil
+}
+
 // SaveDescriptor implements DescriptorSaver.
 func (handle *DirectoryHandler) SaveDescriptor(ctx context.Context, ref string, desc ocispec.Descriptor, reader io.Reader, onProgress func(float64)) error {
 	blobPath := filepath.Join(
