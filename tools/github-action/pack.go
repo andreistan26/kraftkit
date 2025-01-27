@@ -536,6 +536,12 @@ func (opts *GithubAction) packAndPush(ctx context.Context) error {
 		format = "oci"
 	}
 
+	// Purge the package manager before we start packaging such that we can ensure
+	// that we are not packaging any stale data.
+	if err := packmanager.G(ctx).Purge(ctx); err != nil {
+		return fmt.Errorf("package manager could not clean: %w", err)
+	}
+
 	if packagable, err := opts.packagableUnikraft(ctx); packagable && err == nil {
 		err := opts.packUnikraft(ctx, output, format)
 		if err != nil {
