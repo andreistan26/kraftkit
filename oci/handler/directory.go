@@ -867,7 +867,7 @@ func (handle *DirectoryHandler) ResolveManifest(ctx context.Context, fullref str
 	return &manifest, &image, nil
 }
 
-// ListManifests implements DigestResolver.
+// ListManifests implements ManifestLister.
 func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*ocispec.Manifest, error) {
 	manifestsDir := filepath.Join(handle.path, DirectoryHandlerDigestsDir)
 	manifests := map[string]*ocispec.Manifest{}
