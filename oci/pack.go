@@ -857,9 +857,17 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 
 // Delete implements pack.Package.
 func (ocipack *ociPackage) Delete(ctx context.Context) error {
+	var title []string
+	for _, column := range ocipack.Columns() {
+		if len(column.Value) > 12 {
+			continue
+		}
+
+		title = append(title, column.Value)
+	}
+
 	log.G(ctx).
-		WithField("ref", ocipack.imageRef()).
-		Debug("deleting package")
+		Infof("deleting %s (%s)", ocipack.String(), strings.Join(title, ", "))
 
 	if err := ocipack.handle.DeleteManifest(ctx, ocipack.imageRef(), ocipack.manifest.desc.Digest); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("could not delete package manifest: %w", err)
