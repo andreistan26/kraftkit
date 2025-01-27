@@ -850,6 +850,51 @@ func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*
 	return manifests, nil
 }
 
+// isDirEmpty checks if a directory is empty.
+func isDirEmpty(dir string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+
+	return len(entries) == 0, nil
+}
+
+// removeEmptyDirs recursively removes empty directories starting from children up to the given root.
+func removeEmptyDirs(dir, root string) error {
+	// Read the directory contents
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read directory %s: %v", dir, err)
+	}
+
+	// Recursively process subdirectories first
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subDir := dir + "/" + entry.Name()
+			err := removeEmptyDirs(subDir, root)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// After processing all children, check if this directory is empty
+	isEmpty, err := isDirEmpty(dir)
+	if err != nil {
+		return fmt.Errorf("failed to check if directory %s is empty: %v", dir, err)
+	}
+
+	// Remove the directory if it's empty and not the root
+	if isEmpty && dir != root {
+		if err := os.Remove(dir); err != nil {
+			return fmt.Errorf("failed to remove directory %s: %v", dir, err)
+		}
+	}
+
+	return nil
+}
+
 func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref string, dgst digest.Digest) error {
 	manifestPath := filepath.Join(
 		handle.path,
@@ -858,8 +903,6 @@ func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref stri
 		dgst.Hex(),
 	)
 
-	// TODO(nderjung): Remove empty parent directories up until
-	// DirectoryHandlerManifestsDir.
 	defer func() {
 		log.G(ctx).
 			WithField("digest", dgst.String()).
@@ -869,6 +912,13 @@ func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref stri
 			log.G(ctx).
 				WithField("digest", dgst.String()).
 				Debug("could not delete manifest: %w", err)
+		}
+
+		// Check if the directory is empty and remove it if it is.
+		if err := removeEmptyDirs(handle.path, handle.path); err != nil {
+			log.G(ctx).
+				WithField("error", err).
+				Trace("could not remove empty directories")
 		}
 	}()
 
@@ -960,9 +1010,6 @@ func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref stri
 				return err
 			}
 		}
-
-		// TODO(nderjung): Remove empty parent directories up until
-		// DirectoryHandlerIndexesDir.
 
 		if err := os.RemoveAll(indexPath); err != nil {
 			return fmt.Errorf("could not delete index '%s': %w", fullref, err)
