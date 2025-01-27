@@ -133,73 +133,28 @@ func NewPackageFromTarget(ctx context.Context, handle handler.Handler, targ targ
 		return nil, fmt.Errorf("could not instantiate new manifest structure: %w", err)
 	}
 
-	if len(ocipack.Kernel()) > 0 {
-		log.G(ctx).
-			WithField("src", ocipack.Kernel()).
-			WithField("dest", WellKnownKernelPath).
-			Debug("including kernel")
-
-		layer, err := NewLayerFromFile(ctx,
-			ocispec.MediaTypeImageLayer,
-			ocipack.Kernel(),
-			WellKnownKernelPath,
-			WithLayerAnnotation(AnnotationKernelPath, WellKnownKernelPath),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("could not create new layer structure from file: %w", err)
-		}
-		defer os.Remove(layer.tmp)
-
-		if _, err := ocipack.manifest.AddLayer(ctx, layer); err != nil {
-			return nil, fmt.Errorf("could not add layer to manifest: %w", err)
-		}
-	} else if ocipack.original != nil {
-		// It is possible that a target is instantiated from a previously generated
-		// package reference and a kernel has not been supplied explicitly.  In this
-		// circumstance, we adopt the original manifest's list of layers, which can
-		// include a reference to a kernel.
+	// It is possible that a target is instantiated from a previously generated
+	// package reference and a kernel has not been supplied explicitly.  In this
+	// circumstance, we adopt the original manifest's list of layers, which can
+	// include a reference to a kernel.
+	if ocipack.original != nil {
 		ocipack.manifest.layers = ocipack.original.manifest.layers
 	}
 
-	if popts.KernelDbg() && len(ocipack.KernelDbg()) > 0 {
-		log.G(ctx).
-			WithField("src", ocipack.KernelDbg()).
-			WithField("dest", WellKnownKernelDbgPath).
-			Debug("oci: including kernel.dbg")
-
-		layer, err := NewLayerFromFile(ctx,
-			ocispec.MediaTypeImageLayer,
-			ocipack.Kernel(),
-			WellKnownKernelDbgPath,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("could not create new layer structure from file: %w", err)
+	if len(ocipack.Kernel()) > 0 {
+		if err := ocipack.manifest.SetKernel(ctx, ocipack.Kernel()); err != nil {
+			return nil, err
 		}
-		defer os.Remove(layer.tmp)
+	}
 
-		if _, err := ocipack.manifest.AddLayer(ctx, layer); err != nil {
-			return nil, fmt.Errorf("could not add layer to manifest: %w", err)
+	if popts.KernelDbg() && len(ocipack.KernelDbg()) > 0 {
+		if err := ocipack.manifest.SetKernelDbg(ctx, ocipack.KernelDbg()); err != nil {
+			return nil, err
 		}
 	}
 
 	if popts.Initrd() != "" {
-		log.G(ctx).
-			WithField("src", popts.Initrd()).
-			WithField("dest", WellKnownInitrdPath).
-			Debug("including initrd")
-
-		layer, err := NewLayerFromFile(ctx,
-			ocispec.MediaTypeImageLayer,
-			popts.Initrd(),
-			WellKnownInitrdPath,
-			WithLayerAnnotation(AnnotationKernelInitrdPath, WellKnownInitrdPath),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("could build layer from file: %w", err)
-		}
-		defer os.Remove(layer.tmp)
-
-		if _, err := ocipack.manifest.AddLayer(ctx, layer); err != nil {
+		if err := ocipack.manifest.SetInitrd(ctx, popts.Initrd()); err != nil {
 			return nil, err
 		}
 	}
@@ -902,9 +857,17 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 
 // Delete implements pack.Package.
 func (ocipack *ociPackage) Delete(ctx context.Context) error {
+	var title []string
+	for _, column := range ocipack.Columns() {
+		if len(column.Value) > 12 {
+			continue
+		}
+
+		title = append(title, column.Value)
+	}
+
 	log.G(ctx).
-		WithField("ref", ocipack.imageRef()).
-		Debug("deleting package")
+		Infof("deleting %s (%s)", ocipack.String(), strings.Join(title, ", "))
 
 	if err := ocipack.handle.DeleteManifest(ctx, ocipack.imageRef(), ocipack.manifest.desc.Digest); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("could not delete package manifest: %w", err)

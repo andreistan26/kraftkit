@@ -458,7 +458,7 @@ func findManifestsFromSource(ctx context.Context, lastSource, source string, mop
 }
 
 // Save saves the manifest as a YAML format file at the given path
-func (m Manifest) SaveTo(path string) error {
+func (m Manifest) SaveTo(ctx context.Context, path string) error {
 	// Open the file (create if not present)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
@@ -499,6 +499,10 @@ func (m Manifest) SaveTo(path string) error {
 	if err := f.Truncate(0); err != nil {
 		return err
 	}
+
+	log.G(ctx).
+		WithField("path", path).
+		Debugf("saving %s/%s", m.Type, m.Name)
 
 	_, err = f.Write(contents)
 	if err != nil {

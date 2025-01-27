@@ -170,6 +170,35 @@ func (handle *ContainerdHandler) PullDigest(ctx context.Context, mediaType, full
 	return nil
 }
 
+// ListDigest implements DigestResolver.
+func (handle *ContainerdHandler) ListDigests(ctx context.Context) ([]digest.Digest, error) {
+	digests, err := ListContainerdObjectsByType[any](ctx, "", handle)
+	if err != nil {
+		return nil, err
+	}
+
+	var dgsts []digest.Digest
+	for dgst := range digests {
+		dgsts = append(dgsts, digest.FromString(dgst))
+	}
+
+	return dgsts, nil
+}
+
+// DeleteDigest implements DigestDeleter.
+func (handle *ContainerdHandler) DeleteDigest(ctx context.Context, dgst digest.Digest) error {
+	ctx, done, err := handle.lease(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = errors.Join(err, done(ctx))
+	}()
+
+	return handle.client.ContentStore().Delete(ctx, dgst)
+}
+
 // SaveDescriptor implements DescriptorSaver.
 func (handle *ContainerdHandler) SaveDescriptor(ctx context.Context, fullref string, desc ocispec.Descriptor, reader io.Reader, onProgress func(float64)) (err error) {
 	ctx, done, err := handle.lease(ctx)

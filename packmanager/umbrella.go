@@ -110,6 +110,20 @@ func (u UmbrellaManager) Delete(ctx context.Context, qopts ...QueryOption) error
 	return nil
 }
 
+func (u UmbrellaManager) Purge(ctx context.Context) error {
+	for _, manager := range u.packageManagers {
+		log.G(ctx).
+			WithField("format", manager.Format()).
+			Tracef("purging")
+
+		if err := manager.Purge(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (u UmbrellaManager) RemoveSource(ctx context.Context, source string) error {
 	for _, manager := range u.packageManagers {
 		log.G(ctx).WithFields(logrus.Fields{

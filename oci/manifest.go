@@ -181,6 +181,126 @@ func (manifest *Manifest) AddBlob(ctx context.Context, ref string, blob *Blob) (
 	return blob.desc, nil
 }
 
+// SetInitrd sets the initrd of the image.
+func (manifest *Manifest) SetInitrd(ctx context.Context, path string) error {
+	log.G(ctx).
+		WithField("src", path).
+		WithField("dest", WellKnownInitrdPath).
+		Debug("including initrd")
+
+	layers := []*Layer{}
+
+	// Remove any potential existing initrd.
+	for _, layer := range manifest.layers {
+		if _, ok := layer.blob.desc.Annotations[AnnotationKernelInitrdPath]; !ok {
+			layers = append(layers, layer)
+			continue
+		}
+
+		if len(layer.tmp) > 0 {
+			os.Remove(layer.tmp)
+		}
+	}
+
+	manifest.layers = layers
+
+	layer, err := NewLayerFromFile(ctx,
+		ocispec.MediaTypeImageLayer,
+		path,
+		WellKnownInitrdPath,
+		WithLayerAnnotation(AnnotationKernelInitrdPath, WellKnownInitrdPath),
+	)
+	if err != nil {
+		return fmt.Errorf("could build layer from file: %w", err)
+	}
+
+	if _, err := manifest.AddLayer(ctx, layer); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetKernel sets the kernel of the image.
+func (manifest *Manifest) SetKernel(ctx context.Context, path string) error {
+	log.G(ctx).
+		WithField("src", path).
+		WithField("dest", WellKnownKernelPath).
+		Debug("including kernel")
+
+	layers := []*Layer{}
+
+	// Remove any potential existing initrd.
+	for _, layer := range manifest.layers {
+		if _, ok := layer.blob.desc.Annotations[AnnotationKernelPath]; !ok {
+			layers = append(layers, layer)
+			continue
+		}
+
+		if len(layer.tmp) > 0 {
+			os.Remove(layer.tmp)
+		}
+	}
+
+	manifest.layers = layers
+
+	layer, err := NewLayerFromFile(ctx,
+		ocispec.MediaTypeImageLayer,
+		path,
+		WellKnownKernelPath,
+		WithLayerAnnotation(AnnotationKernelPath, WellKnownKernelPath),
+	)
+	if err != nil {
+		return fmt.Errorf("could build layer from file: %w", err)
+	}
+
+	if _, err := manifest.AddLayer(ctx, layer); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetKernelDbg sets the debug kernel of the image.
+func (manifest *Manifest) SetKernelDbg(ctx context.Context, path string) error {
+	log.G(ctx).
+		WithField("src", path).
+		WithField("dest", WellKnownKernelPath).
+		Debug("including debug kernel")
+
+	layers := []*Layer{}
+
+	// Remove any potential existing initrd.
+	for _, layer := range manifest.layers {
+		if _, ok := layer.blob.desc.Annotations[AnnotationKernelDbgPath]; !ok {
+			layers = append(layers, layer)
+			continue
+		}
+
+		if len(layer.tmp) > 0 {
+			os.Remove(layer.tmp)
+		}
+	}
+
+	manifest.layers = layers
+
+	layer, err := NewLayerFromFile(ctx,
+		ocispec.MediaTypeImageLayer,
+		path,
+		WellKnownKernelPath,
+		WithLayerAnnotation(AnnotationKernelDbgPath, WellKnownKernelDbgPath),
+	)
+	if err != nil {
+		return fmt.Errorf("could build layer from file: %w", err)
+	}
+
+	if _, err := manifest.AddLayer(ctx, layer); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // SetLabel sets a label of the image with the provided key.
 func (manifest *Manifest) SetLabel(_ context.Context, key, val string) {
 	if manifest.config.Config.Labels == nil {
@@ -410,6 +530,11 @@ func (manifest *Manifest) Save(ctx context.Context, fullref string, onProgress f
 
 				if _, err := manifest.AddBlob(egCtx, ref.Name(), manifest.layers[i].blob); err != nil {
 					return fmt.Errorf("failed to push layer: %d: %v", i, err)
+				}
+
+				// Remove any potential lingering temporary files.
+				if len(manifest.layers[i].tmp) > 0 {
+					os.Remove(manifest.layers[i].tmp)
 				}
 
 				return nil

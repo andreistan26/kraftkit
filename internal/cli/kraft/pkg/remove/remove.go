@@ -105,9 +105,7 @@ func (opts *RemoveOptions) Run(ctx context.Context, args []string) error {
 		}
 
 		if opts.All {
-			if err = pm.Delete(ctx,
-				packmanager.WithAll(opts.All),
-			); err != nil {
+			if err = pm.Purge(ctx); err != nil {
 				return err
 			}
 		} else {

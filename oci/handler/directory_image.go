@@ -85,7 +85,8 @@ func (dl DirectoryLayer) MediaType() (types.MediaType, error) {
 
 	if _, err := os.Open(layerPath); err != nil {
 		log.G(dl.ctx).
-			Debugf("error accessing layer: %s: marking as non-distributable layer", err.Error())
+			WithField("digest", dl.digest.String()).
+			Debug("marking as non-distributable layer")
 		return types.OCIRestrictedLayer, nil
 	}
 

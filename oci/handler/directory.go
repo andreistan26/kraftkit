@@ -573,6 +573,72 @@ func (handle *DirectoryHandler) PullDigest(ctx context.Context, mediaType, fullr
 	return nil
 }
 
+// ListDigests implements DigestLister.
+func (handle *DirectoryHandler) ListDigests(ctx context.Context) ([]digest.Digest, error) {
+	digestsDir := filepath.Join(handle.path, DirectoryHandlerDigestsDir)
+	dgsts := []digest.Digest{}
+
+	// Create the manifest directory if it does not exist and return nil, since
+	// there's nothing to return.
+	if _, err := os.Stat(digestsDir); err != nil && os.IsNotExist(err) {
+		if err := os.MkdirAll(digestsDir, 0o775); err != nil {
+			return nil, fmt.Errorf("could not create local oci cache directory: %w", err)
+		}
+
+		return nil, nil
+	}
+
+	// Since the directory structure is nested, recursively walk the manifest
+	// directory to find all manifest entries.
+	if err := filepath.WalkDir(digestsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+
+		split := strings.Split(path, string(filepath.Separator))
+		if len(split) < 2 {
+			return nil
+		}
+
+		algo := split[len(split)-2]
+		enco := split[len(split)-1]
+
+		// Append to the list of digests
+		dgsts = append(dgsts, digest.Digest(fmt.Sprintf("%s:%s", algo, enco)))
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("could not walk manifests directory: %w", err)
+	}
+
+	return dgsts, nil
+}
+
+// DeleteDigest implements DigestDeleter.
+func (handle *DirectoryHandler) DeleteDigest(ctx context.Context, dgst digest.Digest) error {
+	digestPath := filepath.Join(
+		handle.path,
+		DirectoryHandlerDigestsDir,
+		dgst.Algorithm().String(),
+		dgst.Encoded(),
+	)
+
+	if err := os.Remove(digestPath); err != nil {
+		return fmt.Errorf("could not remove digest: %w", err)
+	}
+
+	if err := removeEmptyDirs(handle.path, handle.path); err != nil {
+		return fmt.Errorf("could not remove empty parent directories: %w", err)
+	}
+
+	return nil
+}
+
 // SaveDescriptor implements DescriptorSaver.
 func (handle *DirectoryHandler) SaveDescriptor(ctx context.Context, ref string, desc ocispec.Descriptor, reader io.Reader, onProgress func(float64)) error {
 	blobPath := filepath.Join(
@@ -801,7 +867,7 @@ func (handle *DirectoryHandler) ResolveManifest(ctx context.Context, fullref str
 	return &manifest, &image, nil
 }
 
-// ListManifests implements DigestResolver.
+// ListManifests implements ManifestLister.
 func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*ocispec.Manifest, error) {
 	manifestsDir := filepath.Join(handle.path, DirectoryHandlerDigestsDir)
 	manifests := map[string]*ocispec.Manifest{}
@@ -840,7 +906,7 @@ func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*
 		}
 
 		// Append the manifest to the list
-		manifests[digest.FromBytes(rawManifest).String()] = &manifest
+		manifests[filepath.Base(path)] = &manifest
 
 		return nil
 	}); err != nil {
@@ -848,6 +914,51 @@ func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*
 	}
 
 	return manifests, nil
+}
+
+// isDirEmpty checks if a directory is empty.
+func isDirEmpty(dir string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+
+	return len(entries) == 0, nil
+}
+
+// removeEmptyDirs recursively removes empty directories starting from children up to the given root.
+func removeEmptyDirs(dir, root string) error {
+	// Read the directory contents
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read directory %s: %v", dir, err)
+	}
+
+	// Recursively process subdirectories first
+	for _, entry := range entries {
+		if entry.IsDir() {
+			subDir := dir + "/" + entry.Name()
+			err := removeEmptyDirs(subDir, root)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// After processing all children, check if this directory is empty
+	isEmpty, err := isDirEmpty(dir)
+	if err != nil {
+		return fmt.Errorf("failed to check if directory %s is empty: %v", dir, err)
+	}
+
+	// Remove the directory if it's empty and not the root
+	if isEmpty && dir != root {
+		if err := os.Remove(dir); err != nil {
+			return fmt.Errorf("failed to remove directory %s: %v", dir, err)
+		}
+	}
+
+	return nil
 }
 
 func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref string, dgst digest.Digest) error {
@@ -858,8 +969,6 @@ func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref stri
 		dgst.Hex(),
 	)
 
-	// TODO(nderjung): Remove empty parent directories up until
-	// DirectoryHandlerManifestsDir.
 	defer func() {
 		log.G(ctx).
 			WithField("digest", dgst.String()).
@@ -869,6 +978,13 @@ func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref stri
 			log.G(ctx).
 				WithField("digest", dgst.String()).
 				Debug("could not delete manifest: %w", err)
+		}
+
+		// Check if the directory is empty and remove it if it is.
+		if err := removeEmptyDirs(handle.path, handle.path); err != nil {
+			log.G(ctx).
+				WithField("error", err).
+				Trace("could not remove empty directories")
 		}
 	}()
 
@@ -960,9 +1076,6 @@ func (handle *DirectoryHandler) DeleteManifest(ctx context.Context, fullref stri
 				return err
 			}
 		}
-
-		// TODO(nderjung): Remove empty parent directories up until
-		// DirectoryHandlerIndexesDir.
 
 		if err := os.RemoveAll(indexPath); err != nil {
 			return fmt.Errorf("could not delete index '%s': %w", fullref, err)

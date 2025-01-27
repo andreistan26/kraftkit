@@ -103,7 +103,6 @@ func (deployer *deployerKraftfileRuntime) Deploy(ctx context.Context, opts *Depl
 		Format:       "oci",
 		Kraftfile:    opts.Kraftfile,
 		Name:         pkgName,
-		NoPull:       true,
 		Platform:     "kraftcloud",
 		Project:      opts.Project,
 		Push:         true,

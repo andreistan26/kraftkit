@@ -17,7 +17,6 @@ import (
 	"kraftkit.sh/log"
 	"kraftkit.sh/pack"
 	"kraftkit.sh/packmanager"
-	"kraftkit.sh/tui/paraprogress"
 	"kraftkit.sh/tui/processtree"
 	"kraftkit.sh/tui/selection"
 	"kraftkit.sh/unikraft"
@@ -261,44 +260,12 @@ func (p *packagerKraftfileRuntime) Pack(ctx context.Context, opts *PkgOptions, a
 
 	// Remove the cached runtime package reference if it was not previously
 	// pulled.
-	if !pulled && opts.NoPull {
+	if !pulled {
 		defer func() {
 			if err := runtime.Delete(ctx); err != nil {
-				log.G(ctx).Debugf("could not delete intermediate runtime package: %s", err.Error())
+				log.G(ctx).Tracef("could not delete intermediate runtime package: %s", err.Error())
 			}
 		}()
-	}
-
-	if !pulled && !opts.NoPull {
-		paramodel, err := paraprogress.NewParaProgress(
-			ctx,
-			[]*paraprogress.Process{paraprogress.NewProcess(
-				fmt.Sprintf("pulling %s", runtime.String()),
-				func(ctx context.Context, w func(progress float64)) error {
-					popts := []pack.PullOption{}
-					if log.LoggerTypeFromString(config.G[config.KraftKit](ctx).Log.Type) == log.FANCY {
-						popts = append(popts, pack.WithPullProgressFunc(w))
-					}
-
-					return runtime.Pull(
-						ctx,
-						popts...,
-					)
-				},
-			)},
-			paraprogress.IsParallel(false),
-			paraprogress.WithRenderer(
-				log.LoggerTypeFromString(config.G[config.KraftKit](ctx).Log.Type) != log.FANCY,
-			),
-			paraprogress.WithFailFast(true),
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if err := paramodel.Start(); err != nil {
-			return nil, err
-		}
 	}
 
 	// Create a temporary directory we can use to store the artifacts from
