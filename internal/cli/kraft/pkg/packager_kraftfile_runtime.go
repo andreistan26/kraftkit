@@ -263,7 +263,7 @@ func (p *packagerKraftfileRuntime) Pack(ctx context.Context, opts *PkgOptions, a
 	if !pulled {
 		defer func() {
 			if err := runtime.Delete(ctx); err != nil {
-				log.G(ctx).Debugf("could not delete intermediate runtime package: %s", err.Error())
+				log.G(ctx).Tracef("could not delete intermediate runtime package: %s", err.Error())
 			}
 		}()
 	}
