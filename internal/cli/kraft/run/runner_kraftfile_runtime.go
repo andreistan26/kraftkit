@@ -288,11 +288,6 @@ func (runner *runnerKraftfileRuntime) Prepare(ctx context.Context, opts *RunOpti
 				return fmt.Errorf("found %d packages named '%s' based on %s/%s but prompting has been disabled", len(compatible), runtimeName, opts.Platform, opts.Architecture)
 			}
 		}
-
-		log.G(ctx).
-			WithField("arch", opts.Architecture).
-			WithField("plat", opts.Platform).
-			Info("using")
 	}
 
 	if runner.project.Rootfs() != "" && opts.Rootfs == "" {
@@ -351,6 +346,21 @@ func (runner *runnerKraftfileRuntime) Prepare(ctx context.Context, opts *RunOpti
 	if !ok {
 		return fmt.Errorf("package does not convert to target")
 	}
+
+	opts.Platform = runtime.Platform().String()
+	if err := opts.detectAndSetHostPlatform(ctx); err != nil {
+		return fmt.Errorf("could not detect platform: %w", err)
+	}
+
+	opts.Architecture = runtime.Architecture().String()
+	if err := opts.detectAndSetHostArchitecture(ctx); err != nil {
+		return fmt.Errorf("could not detect architecture: %w", err)
+	}
+
+	log.G(ctx).
+		WithField("arch", opts.Architecture).
+		WithField("plat", opts.Platform).
+		Info("using")
 
 	machine.Spec.Architecture = runtime.Architecture().Name()
 	machine.Spec.Platform = runtime.Platform().Name()
