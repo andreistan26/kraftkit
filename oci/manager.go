@@ -86,7 +86,7 @@ func (manager *OCIManager) Update(ctx context.Context) error {
 	for _, pack := range packs {
 		pack := pack.(*ociPackage) // Safe since we're in the oci package
 
-		log.G(ctx).Infof("saving %s", pack.String())
+		log.G(ctx).Debugf("saving %s", pack.String())
 
 		if _, err := pack.index.Save(ctx, pack.imageRef(), nil); err != nil {
 			return fmt.Errorf("error saving %s: %w", pack.String(), err)
