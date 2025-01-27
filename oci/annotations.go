@@ -12,6 +12,7 @@ const (
 	AnnotationCreated              = "org.unikraft.image.created"
 	AnnotaitonDescription          = "org.unikraft.image.description"
 	AnnotationKernelPath           = "org.unikraft.kernel.image"
+	AnnotationKernelDbgPath        = "org.unikraft.kernel.imagedbg"
 	AnnotationKernelVersion        = "org.unikraft.kernel.version"
 	AnnotationKernelInitrdPath     = "org.unikraft.kernel.initrd"
 	AnnotationKernelKConfig        = "org.unikraft.kernel.kconfig."
