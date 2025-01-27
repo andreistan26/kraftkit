@@ -386,7 +386,7 @@ func (manager *OCIManager) Catalog(ctx context.Context, qopts ...packmanager.Que
 	if strings.ContainsRune(qname, '*') {
 		qglob, err = glob.Compile(qname)
 		if err != nil {
-			return nil, fmt.Errorf("query name is not globable: %w", err)
+			return nil, fmt.Errorf("query name is not glob-able: %w", err)
 		}
 	} else if !strings.ContainsRune(qname, ':') && len(query.Version()) > 0 {
 		qname = fmt.Sprintf("%s:%s", qname, query.Version())
