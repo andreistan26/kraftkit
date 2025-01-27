@@ -58,12 +58,17 @@ type RunOptions struct {
 	workdir           string
 	platform          mplatform.Platform
 	machineController machineapi.MachineService
+	hostPlatform      mplatform.Platform
+	hostMode          mplatform.SystemMode
 }
 
 // Run a Unikraft unikernel virtual machine locally.
 func Run(ctx context.Context, opts *RunOptions, args ...string) error {
 	if opts == nil {
-		opts = &RunOptions{}
+		opts = &RunOptions{
+			hostPlatform: mplatform.PlatformUnknown,
+			hostMode:     mplatform.SystemUnknown,
+		}
 	}
 
 	return opts.Run(ctx, args)
@@ -198,24 +203,25 @@ func (opts *RunOptions) Pre(cmd *cobra.Command, _ []string) error {
 
 func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 	var err error
-	var mode mplatform.SystemMode
 
-	defaultPlatform, mode, err := mplatform.Detect(ctx)
-	if err != nil {
-		return err
+	if opts.hostPlatform == mplatform.PlatformUnknown || opts.hostMode == mplatform.SystemUnknown {
+		opts.hostPlatform, opts.hostMode, err = mplatform.Detect(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	if opts.Platform == "" || opts.Platform == "auto" {
-		opts.platform = defaultPlatform
-		opts.Platform = defaultPlatform.String()
+		opts.platform = opts.hostPlatform
+		opts.Platform = opts.hostPlatform.String()
 	} else {
 		var ok bool
 		opts.platform, ok = mplatform.PlatformsByName()[opts.Platform]
 		if !ok {
-			return fmt.Errorf("unknown platform driver '%s', however your system supports '%s'", opts.Platform, defaultPlatform.String())
+			return fmt.Errorf("unknown platform driver '%s', however your system supports '%s'", opts.Platform, opts.hostPlatform.String())
 		}
 	}
-	if defaultPlatform.String() == opts.Platform && mode == mplatform.SystemGuest {
+	if opts.hostPlatform.String() == opts.Platform && opts.hostMode == mplatform.SystemGuest {
 		log.G(ctx).Warn("using hardware emulation")
 		opts.DisableAccel = true
 	}
