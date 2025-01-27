@@ -203,12 +203,9 @@ func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 	defaultPlatform, mode, err := mplatform.Detect(ctx)
 	if err != nil {
 		return err
-	} else if mode == mplatform.SystemGuest {
-		log.G(ctx).Warn("using hardware emulation")
-		opts.DisableAccel = true
 	}
 
-	if opts.Platform == "" || opts.Platform == "auto" || opts.Platform == defaultPlatform.String() {
+	if opts.Platform == "" || opts.Platform == "auto" {
 		opts.platform = defaultPlatform
 		opts.Platform = defaultPlatform.String()
 	} else {
@@ -217,6 +214,10 @@ func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 		if !ok {
 			return fmt.Errorf("unknown platform driver '%s', however your system supports '%s'", opts.Platform, defaultPlatform.String())
 		}
+	}
+	if defaultPlatform.String() == opts.Platform && mode == mplatform.SystemGuest {
+		log.G(ctx).Warn("using hardware emulation")
+		opts.DisableAccel = true
 	}
 
 	machineStrategy, ok := mplatform.Strategies()[opts.platform]
