@@ -47,7 +47,6 @@ type PkgOptions struct {
 	Labels       []string                  `local:"true" long:"label" short:"l" usage:"Set labels to be packed into the package (k=v)"`
 	Name         string                    `local:"true" long:"name" short:"n" usage:"Specify the name of the package"`
 	NoKConfig    bool                      `local:"true" long:"no-kconfig" usage:"Do not include target .config as metadata"`
-	NoPull       bool                      `local:"true" long:"no-pull" usage:"Do not pull package dependencies before packaging"`
 	Output       string                    `local:"true" long:"output" short:"o" usage:"Save the package at the following output"`
 	Platform     string                    `local:"true" long:"plat" short:"p" usage:"Filter the creation of the package by platform of known targets (fc/qemu/xen/kraftcloud)"`
 	Project      app.Application           `noattribute:"true"`

@@ -194,7 +194,6 @@ func Build(ctx context.Context, opts *BuildOptions, args ...string) error {
 			Compress:     false,
 			Format:       "oci",
 			Name:         pkgName,
-			NoPull:       true,
 			Platform:     "kraftcloud",
 			Push:         opts.Push,
 			Project:      project,
