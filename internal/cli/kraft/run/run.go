@@ -197,10 +197,6 @@ func (opts *RunOptions) Pre(cmd *cobra.Command, _ []string) error {
 }
 
 func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
-	if opts.platform != mplatform.PlatformUnknown {
-		return nil
-	}
-
 	var err error
 	var mode mplatform.SystemMode
 
