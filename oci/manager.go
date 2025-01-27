@@ -673,7 +673,7 @@ returnPacks:
 		}
 
 		log.G(ctx).
-			Infof("found %s (%s)", pack.String(), strings.Join(title, ", "))
+			Debugf("found %s (%s)", pack.String(), strings.Join(title, ", "))
 
 		ret = append(ret, pack)
 	}
