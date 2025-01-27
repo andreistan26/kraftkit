@@ -240,7 +240,7 @@ func NewManifestIndexFromURL(ctx context.Context, path string, opts ...ManifestO
 	return index, nil
 }
 
-func (mi *ManifestIndex) SaveTo(path string) error {
+func (mi *ManifestIndex) SaveTo(ctx context.Context, path string) error {
 	// Create parent directories if not present
 	if err := os.MkdirAll(filepath.Dir(path), 0o771); err != nil {
 		return err
@@ -270,7 +270,7 @@ func (mi *ManifestIndex) SaveTo(path string) error {
 			return err
 		}
 
-		if err := manifest.SaveTo(fileloc); err != nil {
+		if err := manifest.SaveTo(ctx, fileloc); err != nil {
 			return fmt.Errorf("could not save manifest: %w", err)
 		}
 

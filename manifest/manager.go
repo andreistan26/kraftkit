@@ -223,7 +223,7 @@ func (m *ManifestManager) saveIndex(ctx context.Context, index *ManifestIndex) e
 		return nil
 	}
 
-	return index.SaveTo(m.LocalManifestIndex(ctx))
+	return index.SaveTo(ctx, m.LocalManifestIndex(ctx))
 }
 
 func (m *ManifestManager) SetSources(_ context.Context, sources ...string) error {
