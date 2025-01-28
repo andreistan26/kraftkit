@@ -283,7 +283,9 @@ func (opts *DeployOptions) Run(ctx context.Context, args []string) error {
 
 		d = *candidate
 
-		log.G(ctx).Infof("use --as=%s to skip this prompt in the future", d.Name())
+		if len(candidates) > 1 {
+			log.G(ctx).Infof("use --as=%s to skip this prompt in the future", d.Name())
+		}
 	} else {
 		return fmt.Errorf("multiple contexts discovered: %v", candidates)
 	}
