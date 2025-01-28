@@ -39,7 +39,9 @@ CAT=${CAT:-cat}
 CURL=${CURL:-curl}
 CUT=${CUT:-cut}
 DIRNAME=${DIRNAME:-dirname}
+DPKG=${DPKG:-dpkg}
 GIT=${GIT:-git}
+GPG=${GPG:-gpg}
 GREP=${GREP:-grep}
 HEAD=${HEAD:-head}
 INSTALL=${INSTALL:-install}
@@ -1083,7 +1085,22 @@ install_linux_gnu() {
         do_cmd "$YUM install -y kraftkit"
     elif check_os_release "debian"; then
         need_cmd "$APT"
-        _ilg_deb_path="deb [trusted=yes] https://deb.pkg.kraftkit.sh /"
+        need_cmd "$GPG"
+        need_cmd "$DPKG"
+        need_cmd "$CURL"
+        need_cmd "$MKDIR"
+        _ilg_deb_key_path_cmd="$MKDIR -p /etc/apt/keyrings"
+
+        _ilg_deb_key_cmd=$(printf "%s%s"                            \
+            "$CURL -fsSL https://deb.pkg.kraftkit.sh/gpg.key | "    \
+            "$GPG --dearmor -o /etc/apt/keyrings/unikraft.gpg"      \
+        )
+
+        _ilg_deb_path=$(printf "%s %s %s"               \
+            "deb [arch=$($DPKG --print-architecture)"   \
+            "signed-by=/etc/apt/keyrings/unikraft.gpg]" \
+            "https://deb.pkg.kraftkit.sh /"
+        )
 
         _ilg_deb_cmd=$(printf "%s%s"                    \
             "echo '${_ilg_deb_path}' | "                \
@@ -1099,6 +1116,8 @@ install_linux_gnu() {
             _idd_recommended="--no-install-recommends"
         fi
 
+        do_cmd "$_ilg_deb_key_path_cmd"
+        do_cmd "$_ilg_deb_key_cmd"
         do_cmd "$_ilg_deb_cmd"
         do_cmd "$APT --allow-unauthenticated update"
         do_cmd "$APT install -y $_idd_recommended kraftkit"
