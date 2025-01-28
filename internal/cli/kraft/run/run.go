@@ -233,8 +233,6 @@ func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 		return fmt.Errorf("unsupported platform driver: %s (contributions welcome!)", opts.Platform)
 	}
 
-	log.G(ctx).WithField("platform", opts.platform.String()).Debug("using")
-
 	opts.machineController, err = machineStrategy.NewMachineV1alpha1(ctx)
 	if err != nil {
 		return err
