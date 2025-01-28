@@ -894,6 +894,11 @@ func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*
 			return nil
 		}
 
+		split := strings.Split(path, string(filepath.Separator))
+		if len(split) < 2 {
+			return nil
+		}
+
 		// Read the manifest
 		rawManifest, err := os.ReadFile(path)
 		if err != nil {
@@ -905,8 +910,11 @@ func (handle *DirectoryHandler) ListManifests(ctx context.Context) (map[string]*
 			return nil
 		}
 
+		algo := split[len(split)-2]
+		enco := split[len(split)-1]
+
 		// Append the manifest to the list
-		manifests[filepath.Base(path)] = &manifest
+		manifests[fmt.Sprintf("%s:%s", algo, enco)] = &manifest
 
 		return nil
 	}); err != nil {
