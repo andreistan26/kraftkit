@@ -270,12 +270,6 @@ func (opts *RunOptions) Run(ctx context.Context, args []string) error {
 		},
 	}
 
-	// Preemptively assign ports which can return early with an error if they are
-	// already in use.
-	if err := opts.assignPorts(ctx, machine); err != nil {
-		return err
-	}
-
 	var run runner
 	var errs []error
 	runners, err := runners()
@@ -335,6 +329,11 @@ func (opts *RunOptions) Run(ctx context.Context, args []string) error {
 
 	// Prepare the machine specification based on the compatible runner.
 	if err := run.Prepare(ctx, opts, machine, args...); err != nil {
+		return err
+	}
+
+	// Assign ports by checking for conflicts with existing machines.
+	if err := opts.assignPorts(ctx, machine); err != nil {
 		return err
 	}
 
