@@ -223,7 +223,7 @@ func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 			return fmt.Errorf("unknown platform driver '%s', however your system supports '%s'", opts.Platform, opts.hostPlatform.String())
 		}
 	}
-	if opts.hostPlatform.String() == opts.Platform && opts.hostMode == mplatform.SystemGuest {
+	if opts.hostPlatform.String() == opts.Platform && opts.hostMode == mplatform.SystemGuest && !opts.DisableAccel {
 		log.G(ctx).Warn("using hardware emulation")
 		opts.DisableAccel = true
 	}
