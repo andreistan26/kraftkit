@@ -116,7 +116,8 @@ aurs:
       # kraftld
       install -Dm755 "${srcdir}/kraftld" "${pkgdir}/usr/bin/kraftld"
       # man pages
-      install -Dm644 "${srcdir}/man/*" "${pkgdir}/usr/share/man/man1"
+      mkdir -p "${pkgdir}/usr/share/man/man1"
+      install -Dm644 ${srcdir}/man/* "${pkgdir}/usr/share/man/man1"
     commit_author:
       name: Unikraft Bot
       email: monkey+aur@unikraft.io
@@ -139,7 +140,7 @@ nix:
       cp -vr "${srcdir}/dist/kraft" "${out}/bin/kraft"
       cp -vr "${srcdir}/dist/kraftld" "${out}/bin/kraftld"
     extra_install: |-
-      installManPage "${srcdir}/man/*"
+      installManPage ${srcdir}/man/*
 
 brews:
   - name: kraftkit
