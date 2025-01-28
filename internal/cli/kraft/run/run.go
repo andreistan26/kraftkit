@@ -147,6 +147,8 @@ func (opts *RunOptions) Pre(cmd *cobra.Command, _ []string) error {
 
 	opts.platform = mplatform.PlatformUnknown
 	opts.Platform = cmd.Flag("plat").Value.String()
+	opts.hostPlatform = mplatform.PlatformUnknown
+	opts.hostMode = mplatform.SystemUnknown
 
 	if opts.RunAs == "" || !set.NewStringSet("kernel", "project").Contains(opts.RunAs) {
 		// Set use of the global package manager.
