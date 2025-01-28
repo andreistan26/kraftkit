@@ -147,6 +147,8 @@ func (opts *RunOptions) Pre(cmd *cobra.Command, _ []string) error {
 
 	opts.platform = mplatform.PlatformUnknown
 	opts.Platform = cmd.Flag("plat").Value.String()
+	opts.hostPlatform = mplatform.PlatformUnknown
+	opts.hostMode = mplatform.SystemUnknown
 
 	if opts.RunAs == "" || !set.NewStringSet("kernel", "project").Contains(opts.RunAs) {
 		// Set use of the global package manager.
@@ -221,7 +223,7 @@ func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 			return fmt.Errorf("unknown platform driver '%s', however your system supports '%s'", opts.Platform, opts.hostPlatform.String())
 		}
 	}
-	if opts.hostPlatform.String() == opts.Platform && opts.hostMode == mplatform.SystemGuest {
+	if opts.hostPlatform.String() == opts.Platform && opts.hostMode == mplatform.SystemGuest && !opts.DisableAccel {
 		log.G(ctx).Warn("using hardware emulation")
 		opts.DisableAccel = true
 	}
@@ -230,8 +232,6 @@ func (opts *RunOptions) detectAndSetHostPlatform(ctx context.Context) error {
 	if !ok {
 		return fmt.Errorf("unsupported platform driver: %s (contributions welcome!)", opts.Platform)
 	}
-
-	log.G(ctx).WithField("platform", opts.platform.String()).Debug("using")
 
 	opts.machineController, err = machineStrategy.NewMachineV1alpha1(ctx)
 	if err != nil {
