@@ -222,6 +222,10 @@ archives:
         strip_parent: true
         info:
           mode: 0755
+      - src: "docs/man/*.1.gz"
+        dst: man
+        info:
+          mode: 0644
 #@ end
 #@ end
 
