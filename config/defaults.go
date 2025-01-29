@@ -178,14 +178,14 @@ func defaultAuths() (map[string]AuthConfig, error) {
 	if foundDockerConfig {
 		cf, err = cliconfig.Load(configPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not load config from Docker daemon: %s", err)
 		}
 	} else if f, err := os.Open(filepath.Join(os.Getenv("XDG_RUNTIME_DIR"), "containers", "auth.json")); err == nil {
 		defer f.Close()
 
 		cf, err = cliconfig.LoadFromReader(f)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("could not load config from Docker daemon: %s", err)
 		}
 	}
 
