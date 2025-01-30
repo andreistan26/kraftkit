@@ -399,25 +399,19 @@ func newIndexAndManifestFromRemoteDigest(ctx context.Context, handle handler.Han
 		return nil, nil, err
 	}
 
-	v1ImageIndexManifest, err := v1ImageIndex.IndexManifest()
+	ociIndexRaw, err := v1ImageIndex.RawManifest()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not access index manifest: %w", err)
 	}
-
-	ociIndex, err := FromGoogleV1IndexManifestToOCISpec(*v1ImageIndexManifest)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not convert index manifest: %w", err)
-	}
-
-	indexJson, err := json.Marshal(ociIndex)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to marshal manifest: %w", err)
-	}
-
 	indexDesc := content.NewDescriptorFromBytes(
 		ocispec.MediaTypeImageIndex,
-		indexJson,
+		ociIndexRaw,
 	)
+
+	var ociIndex ocispec.Index
+	if err := json.Unmarshal(ociIndexRaw, &ociIndex); err != nil {
+		return nil, nil, fmt.Errorf("could not unmarshal index: %w", err)
+	}
 
 	index.desc = &indexDesc
 	eg, egCtx := errgroup.WithContext(ctx)
