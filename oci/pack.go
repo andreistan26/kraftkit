@@ -832,7 +832,7 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 	}
 
 	earliest := time.Now()
-	pulled := false
+	pulled := len(ocipack.manifest.manifest.Layers)
 
 	for _, layer := range ocipack.manifest.manifest.Layers {
 		info, err := ocipack.handle.DigestInfo(ctx, layer.Digest)
@@ -842,13 +842,14 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 			continue
 		}
 
-		pulled = true
+		pulled--
 		if info.UpdatedAt.Before(earliest) {
 			earliest = info.UpdatedAt
 		}
 	}
 
-	if pulled {
+	// Consider only being fully pulled if all of the layers are present.
+	if pulled == 0 {
 		return true, earliest, nil
 	}
 
