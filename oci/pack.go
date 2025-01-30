@@ -867,7 +867,7 @@ func (ocipack *ociPackage) Delete(ctx context.Context) error {
 	}
 
 	log.G(ctx).
-		Infof("deleting %s (%s)", ocipack.String(), strings.Join(title, ", "))
+		Debugf("deleting %s (%s)", ocipack.String(), strings.Join(title, ", "))
 
 	if err := ocipack.handle.DeleteManifest(ctx, ocipack.imageRef(), ocipack.manifest.desc.Digest); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("could not delete package manifest: %w", err)
