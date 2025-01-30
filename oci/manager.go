@@ -325,11 +325,6 @@ func processV1IndexManifests(ctx context.Context, handle handler.Handler, fullre
 				auths = query.Auths()
 			}
 
-			log.G(ctx).
-				WithField("ref", fullref).
-				WithField("digest", descriptor.Digest.String()).
-				Trace("found")
-
 			// If we have made it this far, the query has been successfully
 			// satisfied by this particular manifest and we can generate a package
 			// from it.
@@ -481,6 +476,10 @@ func (manager *OCIManager) Catalog(ctx context.Context, qopts ...packmanager.Que
 			query,
 			FromGoogleV1DescriptorToOCISpec(v1IndexManifest.Manifests...),
 		) {
+			log.G(ctx).
+				WithField("ref", pack.ID()).
+				WithField("via", "remote").
+				Trace("found")
 			packs[checksum] = pack
 			total++
 		}
@@ -538,7 +537,10 @@ func (manager *OCIManager) Catalog(ctx context.Context, qopts ...packmanager.Que
 						continue
 					}
 				}
-
+				log.G(ctx).
+					WithField("ref", pack.ID()).
+					WithField("via", "remote").
+					Trace("found")
 				packs[checksum] = pack
 			}
 		}
@@ -563,6 +565,10 @@ resolveLocalIndex:
 			query,
 			index.Manifests,
 		) {
+			log.G(ctx).
+				WithField("ref", pack.ID()).
+				WithField("via", "local").
+				Trace("found")
 			packs[checksum] = pack
 			total++
 		}
@@ -644,6 +650,10 @@ searchLocalIndexes:
 				query,
 				index.Manifests,
 			) {
+				log.G(ctx).
+					WithField("ref", pack.ID()).
+					WithField("via", "local").
+					Trace("found")
 				packs[checksum] = pack
 				total++
 			}
