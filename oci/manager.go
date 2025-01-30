@@ -30,7 +30,6 @@ import (
 	"kraftkit.sh/oci/cache"
 	"kraftkit.sh/oci/handler"
 	"kraftkit.sh/oci/simpleauth"
-	ociutils "kraftkit.sh/oci/utils"
 	"kraftkit.sh/pack"
 	"kraftkit.sh/packmanager"
 	"kraftkit.sh/unikraft"
@@ -326,11 +325,6 @@ func processV1IndexManifests(ctx context.Context, handle handler.Handler, fullre
 				auths = query.Auths()
 			}
 
-			log.G(ctx).
-				WithField("ref", fullref).
-				WithField("digest", descriptor.Digest.String()).
-				Trace("found")
-
 			// If we have made it this far, the query has been successfully
 			// satisfied by this particular manifest and we can generate a package
 			// from it.
@@ -348,16 +342,8 @@ func processV1IndexManifests(ctx context.Context, handle handler.Handler, fullre
 				return
 			}
 
-			checksum, err := ociutils.PlatformChecksum(pack.String(), descriptor.Platform)
-			if err != nil {
-				log.G(ctx).
-					WithField("ref", fullref).
-					Debugf("could not calculate platform digest for '%s': %s", descriptor.Digest.String(), err)
-				return
-			}
-
 			mu.Lock()
-			packs[checksum] = pack
+			packs[descriptor.Digest.String()] = pack
 			mu.Unlock()
 		}(descriptor)
 	}
@@ -490,6 +476,10 @@ func (manager *OCIManager) Catalog(ctx context.Context, qopts ...packmanager.Que
 			query,
 			FromGoogleV1DescriptorToOCISpec(v1IndexManifest.Manifests...),
 		) {
+			log.G(ctx).
+				WithField("ref", pack.ID()).
+				WithField("via", "remote").
+				Trace("found")
 			packs[checksum] = pack
 			total++
 		}
@@ -547,7 +537,10 @@ func (manager *OCIManager) Catalog(ctx context.Context, qopts ...packmanager.Que
 						continue
 					}
 				}
-
+				log.G(ctx).
+					WithField("ref", pack.ID()).
+					WithField("via", "remote").
+					Trace("found")
 				packs[checksum] = pack
 			}
 		}
@@ -572,6 +565,10 @@ resolveLocalIndex:
 			query,
 			index.Manifests,
 		) {
+			log.G(ctx).
+				WithField("ref", pack.ID()).
+				WithField("via", "local").
+				Trace("found")
 			packs[checksum] = pack
 			total++
 		}
@@ -653,6 +650,10 @@ searchLocalIndexes:
 				query,
 				index.Manifests,
 			) {
+				log.G(ctx).
+					WithField("ref", pack.ID()).
+					WithField("via", "local").
+					Trace("found")
 				packs[checksum] = pack
 				total++
 			}

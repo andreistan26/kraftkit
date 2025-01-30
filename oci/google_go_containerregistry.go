@@ -5,38 +5,10 @@
 package oci
 
 import (
-	"fmt"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
-
-// Convert github.com/google/go-containerregistry/pkg/v1.IndexImage to
-// github.com/opencontainers/image-spec/specs-go/v1.Index
-func FromGoogleV1IndexImageToOCISpec(from v1.ImageIndex) (*ocispec.Index, error) {
-	index, err := from.IndexManifest()
-	if err != nil {
-		return nil, fmt.Errorf("could not get index manifest: %w", err)
-	}
-
-	return FromGoogleV1IndexManifestToOCISpec(*index)
-}
-
-// Convert github.com/google/go-containerregistry/pkg/v1.IndexManifest to
-// github.com/opencontainers/image-spec/specs-go/v1.Index
-func FromGoogleV1IndexManifestToOCISpec(from v1.IndexManifest) (*ocispec.Index, error) {
-	descs := []ocispec.Descriptor{}
-
-	for _, desc := range from.Manifests {
-		descs = append(descs, FromGoogleV1DescriptorToOCISpec(desc)...)
-	}
-
-	return &ocispec.Index{
-		Manifests: descs,
-		MediaType: string(from.MediaType),
-	}, nil
-}
 
 // Convert github.com/google/go-containerregistry/pkg/v1.Descriptor to
 // github.com/opencontainers/image-spec/specs-go/v1.Descriptor
