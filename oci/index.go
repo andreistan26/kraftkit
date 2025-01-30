@@ -160,12 +160,6 @@ func (index *Index) Save(ctx context.Context, fullref string, onProgress func(fl
 		return *index.desc, nil
 	}
 
-	if index.desc != nil {
-		if info, _ := index.handle.DigestInfo(ctx, index.desc.Digest); info != nil {
-			return *index.desc, nil
-		}
-	}
-
 	ref, err := name.ParseReference(fullref,
 		name.WithDefaultRegistry(""),
 		name.WithDefaultTag(DefaultTag),
@@ -221,14 +215,13 @@ func (index *Index) Save(ctx context.Context, fullref string, onProgress func(fl
 		return ocispec.Descriptor{}, fmt.Errorf("failed to marshal manifest: %w", err)
 	}
 
-	if index.desc == nil {
-		indexDesc := content.NewDescriptorFromBytes(
-			ocispec.MediaTypeImageIndex,
-			indexJson,
-		)
-		indexDesc.Annotations = index.index.Annotations
-		index.desc = &indexDesc
-	}
+	// Generate a new descriptor
+	indexDesc := content.NewDescriptorFromBytes(
+		ocispec.MediaTypeImageIndex,
+		indexJson,
+	)
+	indexDesc.Annotations = index.index.Annotations
+	index.desc = &indexDesc
 
 	// Remove the old index
 	if err := index.handle.DeleteIndex(ctx, ref.Name(), false); err != nil {
