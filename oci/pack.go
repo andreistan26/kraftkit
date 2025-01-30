@@ -832,7 +832,7 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 	}
 
 	earliest := time.Now()
-	pulled := false
+	pulled := len(ocipack.manifest.manifest.Layers)
 
 	for _, layer := range ocipack.manifest.manifest.Layers {
 		info, err := ocipack.handle.DigestInfo(ctx, layer.Digest)
@@ -842,17 +842,48 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 			continue
 		}
 
-		pulled = true
+		pulled--
 		if info.UpdatedAt.Before(earliest) {
 			earliest = info.UpdatedAt
 		}
 	}
 
-	if pulled {
+	// Consider only being fully pulled if all of the layers are present.
+	if pulled == 0 {
 		return true, earliest, nil
 	}
 
 	return false, time.Time{}, nil
+}
+
+func (ocipack *ociPackage) CreatedAt(context.Context) (time.Time, error) {
+	if createdAt, ok := ocipack.manifest.manifest.Annotations[ocispec.AnnotationCreated]; ok {
+		return time.Parse(time.RFC3339, createdAt)
+	}
+
+	return time.Time{}, nil
+}
+
+func (ocipack *ociPackage) UpdatedAt(ctx context.Context) (time.Time, error) {
+	updatedAt, err := ocipack.CreatedAt(ctx)
+	if err != nil || len(ocipack.manifest.manifest.Layers) == 0 {
+		return time.Time{}, nil
+	}
+
+	for _, layer := range ocipack.manifest.manifest.Layers {
+		info, err := ocipack.handle.DigestInfo(ctx, layer.Digest)
+		if err != nil && errors.Is(err, os.ErrNotExist) {
+			continue
+		} else if err != nil {
+			return updatedAt, err
+		}
+
+		if info.UpdatedAt.After(updatedAt) {
+			updatedAt = info.UpdatedAt
+		}
+	}
+
+	return updatedAt, nil
 }
 
 // Delete implements pack.Package.

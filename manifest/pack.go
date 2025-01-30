@@ -189,6 +189,18 @@ func (mp mpack) PulledAt(context.Context) (bool, time.Time, error) {
 	return false, time.Time{}, nil
 }
 
+func (mp mpack) CreatedAt(context.Context) (time.Time, error) {
+	// TODO(nderjung): Need to determine the creation time of the manifest by
+	// supplementing the manifest with a creation time field.
+	return time.Time{}, nil
+}
+
+func (mp mpack) UpdatedAt(context.Context) (time.Time, error) {
+	// TODO(nderjung): Need to determine the update time of the manifest by
+	// supplementing the manifest with an update time field.
+	return time.Time{}, nil
+}
+
 // Delete implements pack.Package.
 func (mp mpack) Delete(ctx context.Context) error {
 	return mp.manifest.Provider.DeleteManifest(ctx)
