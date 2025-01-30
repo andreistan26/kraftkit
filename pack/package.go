@@ -56,6 +56,9 @@ type Package interface {
 	// last retrieved.
 	PulledAt(context.Context) (bool, time.Time, error)
 
+	// CreatedAt is an attribute of a package to indicate when it was created.
+	CreatedAt(context.Context) (time.Time, error)
+
 	// Format returns the name of the implementation.
 	Format() PackageFormat
 }

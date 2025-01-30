@@ -146,6 +146,11 @@ func (runtime *Runtime) PulledAt(ctx context.Context) (bool, time.Time, error) {
 	return runtime.pack.PulledAt(ctx)
 }
 
+// Pull implements kraftkit.sh/pack.Package
+func (runtime *Runtime) CreatedAt(ctx context.Context) (time.Time, error) {
+	return runtime.pack.CreatedAt(ctx)
+}
+
 func (runtime *Runtime) Delete(ctx context.Context) error {
 	return runtime.pack.Delete(ctx)
 }

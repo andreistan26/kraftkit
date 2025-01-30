@@ -856,6 +856,14 @@ func (ocipack *ociPackage) PulledAt(ctx context.Context) (bool, time.Time, error
 	return false, time.Time{}, nil
 }
 
+func (ocipack *ociPackage) CreatedAt(context.Context) (time.Time, error) {
+	if createdAt, ok := ocipack.manifest.manifest.Annotations[ocispec.AnnotationCreated]; ok {
+		return time.Parse(time.RFC3339, createdAt)
+	}
+
+	return time.Time{}, nil
+}
+
 // Delete implements pack.Package.
 func (ocipack *ociPackage) Delete(ctx context.Context) error {
 	var title []string
