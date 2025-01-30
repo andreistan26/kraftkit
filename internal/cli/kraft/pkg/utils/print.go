@@ -45,6 +45,8 @@ func PrintPackages(ctx context.Context, out io.Writer, style string, packs ...pa
 		table.AddField("NAME", cs.Bold)
 		table.AddField("VERSION", cs.Bold)
 		table.AddField("FORMAT", cs.Bold)
+		table.AddField("CREATED", cs.Bold)
+		table.AddField("UPDATED", cs.Bold)
 		table.AddField("PULLED", cs.Bold)
 
 		if len(packs) == 0 {
@@ -63,6 +65,18 @@ func PrintPackages(ctx context.Context, out io.Writer, style string, packs ...pa
 			table.AddField(pack.Name(), nil)
 			table.AddField(pack.Version(), nil)
 			table.AddField(pack.Format().String(), nil)
+			createdAt, err := pack.CreatedAt(ctx)
+			if err != nil {
+				table.AddField(err.Error(), nil)
+			} else {
+				table.AddField(humanize.Time(createdAt), nil)
+			}
+			updatedAt, err := pack.UpdatedAt(ctx)
+			if err != nil {
+				table.AddField(err.Error(), nil)
+			} else {
+				table.AddField(humanize.Time(updatedAt), nil)
+			}
 			pulledAt := "never"
 			pulled, pulledTime, err := pack.PulledAt(ctx)
 			if err != nil {
