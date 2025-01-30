@@ -864,6 +864,28 @@ func (ocipack *ociPackage) CreatedAt(context.Context) (time.Time, error) {
 	return time.Time{}, nil
 }
 
+func (ocipack *ociPackage) UpdatedAt(ctx context.Context) (time.Time, error) {
+	updatedAt, err := ocipack.CreatedAt(ctx)
+	if err != nil || len(ocipack.manifest.manifest.Layers) == 0 {
+		return time.Time{}, nil
+	}
+
+	for _, layer := range ocipack.manifest.manifest.Layers {
+		info, err := ocipack.handle.DigestInfo(ctx, layer.Digest)
+		if err != nil && errors.Is(err, os.ErrNotExist) {
+			continue
+		} else if err != nil {
+			return updatedAt, err
+		}
+
+		if info.UpdatedAt.After(updatedAt) {
+			updatedAt = info.UpdatedAt
+		}
+	}
+
+	return updatedAt, nil
+}
+
 // Delete implements pack.Package.
 func (ocipack *ociPackage) Delete(ctx context.Context) error {
 	var title []string

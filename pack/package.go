@@ -59,6 +59,10 @@ type Package interface {
 	// CreatedAt is an attribute of a package to indicate when it was created.
 	CreatedAt(context.Context) (time.Time, error)
 
+	// UpdatedAt is an attribute of a package to indicate when it was last
+	// updated.
+	UpdatedAt(context.Context) (time.Time, error)
+
 	// Format returns the name of the implementation.
 	Format() PackageFormat
 }
