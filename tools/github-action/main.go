@@ -149,7 +149,7 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 
 	manifest.ForceGit = opts.ForceGit
 	if opts.GitCloneDepth > 0 {
-		manifest.Depth = opts.GitCloneDepth
+		manifest.GitCloneDepth = opts.GitCloneDepth
 	}
 
 	// If the `run` attribute has been set, only execute this.
