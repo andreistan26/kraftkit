@@ -64,6 +64,13 @@ inputs:
     description: Toggle building the unikernel.
     required: false
     default: "true"
+  git_clone_depth:
+    description: Depth of the git clone.
+    required: false
+    default: "-1"
+  force_git:
+    description: Use git protocol for fetching sources.
+    required: false
   plat:
     description: Platform to build for.
     required: false
@@ -215,7 +222,9 @@ runs:
         -e "INPUT_ARGS=${{ inputs.args }}" \
         -e "INPUT_AUTHS=${{ inputs.auths }}" \
         -e "INPUT_BUILD=${{ inputs.build }}" \
+        -e "INPUT_GIT_CLONE_DEPTH=${{ inputs.git_clone_depth }}" \
         -e "INPUT_EXECUTE=${{ inputs.execute }}" \
+        -e "INPUT_FORCE_GIT=${{ inputs.force_git }}" \
         -e "INPUT_ROOTFS=${{ inputs.rootfs }}" \
         -e "INPUT_KRAFTFILE=${{ inputs.kraftfile }}" \
         -e "INPUT_LOGLEVEL=${{ inputs.loglevel }}" \
