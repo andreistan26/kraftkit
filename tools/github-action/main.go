@@ -147,11 +147,6 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		}
 	}
 
-	manifest.ForceGit = opts.ForceGit
-	if opts.GitCloneDepth > 0 {
-		manifest.Depth = opts.GitCloneDepth
-	}
-
 	// If the `run` attribute has been set, only execute this.
 	runScript := fmt.Sprintf("%s/.kraftkit/run.sh", workspace)
 	if _, err := os.Stat(runScript); err == nil {
@@ -206,6 +201,11 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		return fmt.Errorf("cannot build project directory without a Kraftfile")
 	} else if err != nil {
 		return fmt.Errorf("could not initialize project directory: %w", err)
+	}
+
+	manifest.ForceGit = opts.ForceGit
+	if opts.GitCloneDepth > 0 {
+		manifest.GitCloneDepth = opts.GitCloneDepth
 	}
 
 	if opts.project.Template() != nil {
