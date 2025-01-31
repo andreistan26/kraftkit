@@ -132,8 +132,8 @@ func pullGit(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) e
 		},
 	}
 
-	if gitCloneDepth > 0 {
-		copts.Depth = gitCloneDepth
+	if GitCloneDepth > 0 {
+		copts.Depth = GitCloneDepth
 	}
 
 	path := manifest.Origin
@@ -203,8 +203,8 @@ func pullGit(ctx context.Context, manifest *Manifest, opts ...pack.PullOption) e
 		WithField("from", path).
 		WithField("to", local).
 		WithField("branch", version)
-	if gitCloneDepth > 0 {
-		entry = entry.WithField("depth", gitCloneDepth)
+	if GitCloneDepth > 0 {
+		entry = entry.WithField("depth", GitCloneDepth)
 	}
 	entry.Infof("git clone")
 

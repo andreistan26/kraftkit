@@ -132,7 +132,7 @@ func (ghp GitHubProvider) Manifests() ([]*Manifest, error) {
 func (ghp GitHubProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, popts ...pack.PullOption) error {
 	manifest.mopts = ghp.mopts
 
-	if useGit {
+	if ForceGit {
 		return pullGit(ctx, manifest, popts...)
 	}
 
@@ -142,7 +142,7 @@ func (ghp GitHubProvider) PullChannel(ctx context.Context, manifest *Manifest, c
 func (ghp GitHubProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, popts ...pack.PullOption) error {
 	manifest.mopts = ghp.mopts
 
-	if useGit {
+	if ForceGit {
 		return pullGit(ctx, manifest, popts...)
 	}
 
