@@ -11,13 +11,13 @@ import (
 )
 
 var (
-	// useGit is a local variable used within the context of the manifest package
+	// ForceGit is a local variable used within the context of the manifest package
 	// and is dynamically injected as a CLI option.
-	useGit = false
+	ForceGit = false
 
-	// gitCloneDepth is used during the cloning process to indicate the clone
+	// GitCloneDepth is used during the cloning process to indicate the clone
 	// depth.
-	gitCloneDepth = -1
+	GitCloneDepth = -1
 )
 
 func RegisterPackageManager() func(u *packmanager.UmbrellaManager) error {
@@ -31,7 +31,7 @@ func RegisterFlags() {
 	cmdfactory.RegisterFlag(
 		"kraft pkg pull",
 		cmdfactory.BoolVarP(
-			&useGit,
+			&ForceGit,
 			"git", "g",
 			false,
 			"Use Git when pulling sources",
@@ -41,7 +41,7 @@ func RegisterFlags() {
 	cmdfactory.RegisterFlag(
 		"kraft pkg pull",
 		cmdfactory.IntVar(
-			&gitCloneDepth,
+			&GitCloneDepth,
 			"git-depth",
 			-1,
 			"Set the Git clone depth",
@@ -51,7 +51,7 @@ func RegisterFlags() {
 	cmdfactory.RegisterFlag(
 		"kraft build",
 		cmdfactory.BoolVarP(
-			&useGit,
+			&ForceGit,
 			"git", "g",
 			false,
 			"Use Git when pulling sources",
@@ -61,7 +61,27 @@ func RegisterFlags() {
 	cmdfactory.RegisterFlag(
 		"kraft build",
 		cmdfactory.IntVar(
-			&gitCloneDepth,
+			&GitCloneDepth,
+			"git-depth",
+			-1,
+			"Set the Git clone depth",
+		),
+	)
+
+	cmdfactory.RegisterFlag(
+		"kraft cloud deploy",
+		cmdfactory.BoolVar(
+			&ForceGit,
+			"git",
+			false,
+			"Use Git when pulling sources",
+		),
+	)
+
+	cmdfactory.RegisterFlag(
+		"kraft cloud deploy",
+		cmdfactory.IntVar(
+			&GitCloneDepth,
 			"git-depth",
 			-1,
 			"Set the Git clone depth",

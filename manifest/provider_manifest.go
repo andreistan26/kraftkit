@@ -69,7 +69,7 @@ func (mp *ManifestProvider) Manifests() ([]*Manifest, error) {
 func (mp *ManifestProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, opts ...pack.PullOption) error {
 	manifest.mopts = mp.manifest.mopts
 
-	if useGit {
+	if ForceGit {
 		return pullGit(ctx, manifest, opts...)
 	}
 
@@ -79,7 +79,7 @@ func (mp *ManifestProvider) PullChannel(ctx context.Context, manifest *Manifest,
 func (mp *ManifestProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, opts ...pack.PullOption) error {
 	manifest.mopts = mp.manifest.mopts
 
-	if useGit {
+	if ForceGit {
 		return pullGit(ctx, manifest, opts...)
 	}
 

@@ -20,6 +20,7 @@ import (
 	"kraftkit.sh/config"
 	"kraftkit.sh/internal/bootstrap"
 	"kraftkit.sh/log"
+	"kraftkit.sh/manifest"
 	"kraftkit.sh/pack"
 	"kraftkit.sh/packmanager"
 	"kraftkit.sh/unikraft/app"
@@ -42,10 +43,12 @@ type GithubAction struct {
 	Kraftfile string `long:"kraftfile" env:"INPUT_KRAFTFILE" usage:"Path to Kraftfile or contents of Kraftfile"`
 
 	// Build flags
-	Arch   string `long:"arch" env:"INPUT_ARCH" usage:"Architecture to build for"`
-	Build  bool   `long:"build" env:"INPUT_BUILD" usage:"Toggle building the unikernel"`
-	Plat   string `long:"plat" env:"INPUT_PLAT" usage:"Platform to build for"`
-	Target string `long:"target" env:"INPUT_TARGET" usage:"Name of the target to build for"`
+	Arch          string `long:"arch" env:"INPUT_ARCH" usage:"Architecture to build for"`
+	Build         bool   `long:"build" env:"INPUT_BUILD" usage:"Toggle building the unikernel"`
+	GitCloneDepth int    `long:"git_clone_depth" env:"INPUT_GIT_CLONE_DEPTH" usage:"Depth of the Git clone"`
+	ForceGit      bool   `long:"force_git" env:"INPUT_FORCE_GIT" usage:"Use Git when pulling sources"`
+	Plat          string `long:"plat" env:"INPUT_PLAT" usage:"Platform to build for"`
+	Target        string `long:"target" env:"INPUT_TARGET" usage:"Name of the target to build for"`
 
 	// Running flags
 	Execute bool   `long:"execute" env:"INPUT_EXECUTE" usage:"If to run the unikernel"`
@@ -142,6 +145,11 @@ func (opts *GithubAction) Run(ctx context.Context, args []string) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	manifest.ForceGit = opts.ForceGit
+	if opts.GitCloneDepth > 0 {
+		manifest.Depth = opts.GitCloneDepth
 	}
 
 	// If the `run` attribute has been set, only execute this.

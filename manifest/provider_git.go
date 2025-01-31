@@ -199,7 +199,7 @@ func (gp *GitProvider) Manifests() ([]*Manifest, error) {
 func (gp *GitProvider) PullChannel(ctx context.Context, manifest *Manifest, channel *ManifestChannel, popts ...pack.PullOption) error {
 	manifest.mopts = gp.mopts
 
-	if useGit {
+	if ForceGit {
 		return pullGit(ctx, manifest, popts...)
 	}
 
@@ -209,7 +209,7 @@ func (gp *GitProvider) PullChannel(ctx context.Context, manifest *Manifest, chan
 func (gp *GitProvider) PullVersion(ctx context.Context, manifest *Manifest, version *ManifestVersion, popts ...pack.PullOption) error {
 	manifest.mopts = gp.mopts
 
-	if useGit {
+	if ForceGit {
 		return pullGit(ctx, manifest, popts...)
 	}
 
