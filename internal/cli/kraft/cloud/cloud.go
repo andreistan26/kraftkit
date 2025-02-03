@@ -101,7 +101,7 @@ func NewCmd() *cobra.Command {
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-scale", Title: "SCALE COMMANDS"})
 	cmd.AddCommand(scale.NewCmd())
 
-	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-svc", Title: "SERVICE COMMANDS"})
+	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-service", Title: "SERVICE COMMANDS"})
 	cmd.AddCommand(service.NewCmd())
 
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-certificate", Title: "CERTIFICATE COMMANDS"})

@@ -224,7 +224,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud service create -n my-service 443:8080/http+tls
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-svc",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-service",
 		},
 	})
 	if err != nil {
