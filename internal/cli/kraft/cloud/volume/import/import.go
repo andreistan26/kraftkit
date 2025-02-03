@@ -70,7 +70,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud volume import --source path/to/file --volume my-volume
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-vol",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume",
 		},
 	})
 	if err != nil {
