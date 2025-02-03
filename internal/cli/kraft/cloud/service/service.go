@@ -33,7 +33,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud service list
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup:  "kraftcloud-svc",
+			cmdfactory.AnnotationHelpGroup:  "kraftcloud-service",
 			cmdfactory.AnnotationHelpHidden: "true",
 		},
 	})

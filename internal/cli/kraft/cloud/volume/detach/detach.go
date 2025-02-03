@@ -44,7 +44,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud volume detach --from my-instance 77d0316a-fbbe-488d-8618-5bf7a612477a
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-vol",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume",
 		},
 	})
 	if err != nil {

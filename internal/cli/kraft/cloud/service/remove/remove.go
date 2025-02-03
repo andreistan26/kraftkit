@@ -51,7 +51,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud service remove --all
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-svc",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-service",
 		},
 	})
 	if err != nil {

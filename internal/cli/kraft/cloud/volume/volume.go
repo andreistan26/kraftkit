@@ -36,7 +36,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud volume list
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup:  "kraftcloud-vol",
+			cmdfactory.AnnotationHelpGroup:  "kraftcloud-volume",
 			cmdfactory.AnnotationHelpHidden: "true",
 		},
 	})

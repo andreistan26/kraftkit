@@ -87,7 +87,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud volume at 77d0316a-fbbe-488d-8618-5bf7a612477a --to nginx --at /mnt/data -r
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-vol",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume",
 		},
 	})
 	if err != nil {

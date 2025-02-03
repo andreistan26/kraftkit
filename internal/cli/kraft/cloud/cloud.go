@@ -15,10 +15,10 @@ import (
 	"kraftkit.sh/internal/cli/kraft/cloud/certificate"
 	"kraftkit.sh/internal/cli/kraft/cloud/compose"
 	"kraftkit.sh/internal/cli/kraft/cloud/deploy"
-	"kraftkit.sh/internal/cli/kraft/cloud/img"
+	"kraftkit.sh/internal/cli/kraft/cloud/image"
 	"kraftkit.sh/internal/cli/kraft/cloud/instance"
-	"kraftkit.sh/internal/cli/kraft/cloud/metros"
-	"kraftkit.sh/internal/cli/kraft/cloud/quotas"
+	"kraftkit.sh/internal/cli/kraft/cloud/metro"
+	"kraftkit.sh/internal/cli/kraft/cloud/quota"
 	"kraftkit.sh/internal/cli/kraft/cloud/scale"
 	"kraftkit.sh/internal/cli/kraft/cloud/service"
 	"kraftkit.sh/internal/cli/kraft/cloud/tunnel"
@@ -86,29 +86,29 @@ func NewCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(deploy.NewCmd())
-	cmd.AddCommand(quotas.NewCmd())
+	cmd.AddCommand(quota.NewCmd())
 	cmd.AddCommand(tunnel.NewCmd())
 
-	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-img", Title: "IMAGE COMMANDS"})
-	cmd.AddCommand(img.NewCmd())
+	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-image", Title: "IMAGE COMMANDS"})
+	cmd.AddCommand(image.NewCmd())
 
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-instance", Title: "INSTANCE COMMANDS"})
 	cmd.AddCommand(instance.NewCmd())
 
-	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-vol", Title: "VOLUME COMMANDS"})
+	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-volume", Title: "VOLUME COMMANDS"})
 	cmd.AddCommand(volume.NewCmd())
 
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-scale", Title: "SCALE COMMANDS"})
 	cmd.AddCommand(scale.NewCmd())
 
-	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-svc", Title: "SERVICE COMMANDS"})
+	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-service", Title: "SERVICE COMMANDS"})
 	cmd.AddCommand(service.NewCmd())
 
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-certificate", Title: "CERTIFICATE COMMANDS"})
 	cmd.AddCommand(certificate.NewCmd())
 
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-metro", Title: "METRO COMMANDS"})
-	cmd.AddCommand(metros.NewCmd())
+	cmd.AddCommand(metro.NewCmd())
 
 	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-compose", Title: "COMPOSE COMMANDS"})
 	cmd.AddCommand(compose.NewCmd())

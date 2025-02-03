@@ -43,7 +43,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud volume list -o json
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-vol",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume",
 		},
 	})
 	if err != nil {

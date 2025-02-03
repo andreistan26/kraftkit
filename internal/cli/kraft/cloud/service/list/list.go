@@ -40,7 +40,7 @@ func NewCmd() *cobra.Command {
 			$ kraft cloud service list -o full
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-svc",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-service",
 		},
 	})
 	if err != nil {
