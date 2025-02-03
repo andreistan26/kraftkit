@@ -7,6 +7,8 @@ package create
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"os"
 
@@ -32,6 +34,40 @@ type CreateOptions struct {
 	Name   string                             `local:"true" size:"name" short:"n" usage:"The name of the certificate"`
 	PKey   string                             `local:"true" long:"pkey" short:"p" usage:"The private key of the certificate in PEM format"`
 	Token  string                             `noattribute:"true"`
+}
+
+func isValidChain(chain []byte) error {
+	for {
+		block, rest := pem.Decode(chain)
+		if block == nil {
+			if len(rest) > 0 {
+				return fmt.Errorf("could not parse PEM")
+			}
+			break
+		}
+		if _, err := x509.ParseCertificates(block.Bytes); err != nil {
+			return fmt.Errorf("could not parse certificate: %w", err)
+		}
+		chain = rest
+	}
+	return nil
+}
+
+func isValidPrivateKey(pkey []byte) error {
+	block, _ := pem.Decode(pkey)
+	if block == nil {
+		return fmt.Errorf("could not parse PEM")
+	}
+
+	if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil {
+		return nil
+	}
+
+	if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("could not parse private key in PKCS1 or PKCS8 format")
 }
 
 // Create a KraftCloud certificate.
@@ -69,6 +105,9 @@ func Create(ctx context.Context, opts *CreateOptions) (*kccertificates.CreateRes
 
 		opts.PKey = string(b)
 	}
+	if err := isValidPrivateKey([]byte(opts.PKey)); err != nil {
+		return nil, fmt.Errorf("invalid private key argument: %w", err)
+	}
 
 	if _, err := os.Stat(opts.Chain); err != nil {
 		if os.IsNotExist(err) {
@@ -83,6 +122,9 @@ func Create(ctx context.Context, opts *CreateOptions) (*kccertificates.CreateRes
 		}
 
 		opts.Chain = string(b)
+	}
+	if err := isValidChain([]byte(opts.Chain)); err != nil {
+		return nil, fmt.Errorf("invalid chain argument: %w", err)
 	}
 
 	createResp, err := opts.Client.WithMetro(opts.Metro).Create(ctx, &kccertificates.CreateRequest{
