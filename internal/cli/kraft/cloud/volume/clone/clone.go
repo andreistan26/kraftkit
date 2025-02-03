@@ -3,16 +3,14 @@
 // Licensed under the BSD-3-Clause License (the "License").
 // You may not use this file except in compliance with the License.
 
-package create
+package clone
 
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	kraftcloud "sdk.kraft.cloud"
 	kcvolumes "sdk.kraft.cloud/volumes"
@@ -23,21 +21,21 @@ import (
 	"kraftkit.sh/iostreams"
 )
 
-type CreateOptions struct {
+type CloneOptions struct {
 	Auth   *config.AuthConfig       `noattribute:"true"`
 	Client kcvolumes.VolumesService `noattribute:"true"`
 	Metro  string                   `noattribute:"true"`
-	Name   string                   `local:"true" long:"name" short:"n" usage:"Name of the volume"`
-	Size   string                   `local:"true" long:"size" short:"s" usage:"Size (MiB increments or suffixes like Mi, Gi, etc.)"`
+	Source string                   `local:"true" long:"source" short:"s" usage:"Name or UUID of the source volume or template"`
+	Target string                   `local:"true" long:"target" short:"t" usage:"Name or UUID of the target volume"`
 	Token  string                   `noattribute:"true"`
 }
 
-// Create a KraftCloud persistent volume.
-func Create(ctx context.Context, opts *CreateOptions) (*kcvolumes.CreateResponseItem, error) {
+// Clone a KraftCloud persistent volume.
+func Clone(ctx context.Context, opts *CloneOptions) (*kcvolumes.CloneResponseItem, error) {
 	var err error
 
 	if opts == nil {
-		opts = &CreateOptions{}
+		opts = &CloneOptions{}
 	}
 
 	if opts.Auth == nil {
@@ -53,49 +51,34 @@ func Create(ctx context.Context, opts *CreateOptions) (*kcvolumes.CreateResponse
 		)
 	}
 
-	if _, err := strconv.ParseUint(opts.Size, 10, 64); err == nil {
-		opts.Size = fmt.Sprintf("%sMi", opts.Size)
-	}
-
-	qty, err := resource.ParseQuantity(opts.Size)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse size quantity: %w", err)
-	}
-
-	if qty.Value() < 1024*1024 {
-		return nil, fmt.Errorf("size must be at least 1Mi")
-	}
-
-	// Convert to MiB
-	sizeMB := int(qty.Value() / (1024 * 1024))
-
-	createResp, err := opts.Client.WithMetro(opts.Metro).Create(ctx, opts.Name, sizeMB)
+	cloneResp, err := opts.Client.WithMetro(opts.Metro).Clone(ctx, opts.Source, opts.Target)
 	if err != nil {
 		return nil, fmt.Errorf("creating volume: %w", err)
 	}
-	create, err := createResp.FirstOrErr()
+	clone, err := cloneResp.FirstOrErr()
 	if err != nil {
 		return nil, fmt.Errorf("creating volume: %w", err)
 	}
 
-	return create, nil
+	return clone, nil
 }
 
 func NewCmd() *cobra.Command {
-	cmd, err := cmdfactory.New(&CreateOptions{}, cobra.Command{
-		Short:   "Create a persistent volume",
-		Use:     "create [FLAGS]",
+	cmd, err := cmdfactory.New(&CloneOptions{}, cobra.Command{
+		Short:   "Clone a persistent volume or template",
+		Use:     "clone [FLAGS]",
 		Args:    cobra.NoArgs,
-		Aliases: []string{"crt"},
+		Aliases: []string{"duplicate", "copy"},
 		Long: heredoc.Doc(`
-			Create a new persistent volume.
+			Create a new persistent volume by cloning an existing
+			volume or template.
 		`),
 		Example: heredoc.Doc(`
-			# Create a new persistent 100MiB volume named "my-volume"
-			$ kraft cloud volume create --size 100 --name my-volume
+			# Create a new persistent volume named "my-volume" by cloning an existing volume "existing-volume"
+			$ kraft cloud volume clone --source existing-volume --target my-volume
 
-			# Create a new persistent 10MiB volume with a random name
-			$ kraft cloud volume create --size 10Mi
+			# Create a new persistent volume named "my-volume" by cloning an existing template "existing-template"
+			$ kraft cloud volume clone -s existing-template -t my-volume
 		`),
 		Annotations: map[string]string{
 			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume",
@@ -108,9 +91,9 @@ func NewCmd() *cobra.Command {
 	return cmd
 }
 
-func (opts *CreateOptions) Pre(cmd *cobra.Command, _ []string) error {
-	if opts.Size == "" {
-		return fmt.Errorf("must specify --size flag")
+func (opts *CloneOptions) Pre(cmd *cobra.Command, _ []string) error {
+	if opts.Source == "" {
+		return fmt.Errorf("source volume/template is required")
 	}
 
 	err := utils.PopulateMetroToken(cmd, &opts.Metro, &opts.Token)
@@ -121,10 +104,10 @@ func (opts *CreateOptions) Pre(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func (opts *CreateOptions) Run(ctx context.Context, _ []string) error {
-	volume, err := Create(ctx, opts)
+func (opts *CloneOptions) Run(ctx context.Context, _ []string) error {
+	volume, err := Clone(ctx, opts)
 	if err != nil {
-		return fmt.Errorf("could not create volume: %w", err)
+		return fmt.Errorf("could not clone volume: %w", err)
 	}
 
 	_, err = fmt.Fprintln(iostreams.G(ctx).Out, volume.UUID)

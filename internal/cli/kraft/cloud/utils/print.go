@@ -462,6 +462,91 @@ func PrintVolumes(ctx context.Context, format string, resp kcclient.ServiceRespo
 	return table.Render(iostreams.G(ctx).Out)
 }
 
+// PrintVolumesTemplates pretty-prints the provided set of volume templates
+// or returns an error if unable to send to stdout via the provided context.
+func PrintVolumesTemplates(ctx context.Context, format string, resp kcclient.ServiceResponse[kcvolumes.TemplateGetResponseItem]) error {
+	if format == "raw" {
+		printRaw(ctx, resp)
+		return nil
+	}
+
+	templates, err := resp.AllOrErr()
+	if err != nil {
+		return err
+	}
+
+	if err = iostreams.G(ctx).StartPager(); err != nil {
+		log.G(ctx).Errorf("error starting pager: %v", err)
+	}
+
+	defer iostreams.G(ctx).StopPager()
+
+	cs := iostreams.G(ctx).ColorScheme()
+	table, err := tableprinter.NewTablePrinter(ctx,
+		tableprinter.WithMaxWidth(iostreams.G(ctx).TerminalWidth()),
+		tableprinter.WithOutputFormatFromString(format),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Header row
+	if format != "table" {
+		table.AddField("UUID", cs.Bold)
+	}
+	table.AddField("NAME", cs.Bold)
+	table.AddField("CREATED AT", cs.Bold)
+	table.AddField("SIZE", cs.Bold)
+	table.AddField("FREE", cs.Bold)
+	table.AddField("ATTACHED TO", cs.Bold)
+	table.AddField("STATE", cs.Bold)
+	table.AddField("PERSISTENT", cs.Bold)
+	table.AddField("POLICY", cs.Bold)
+	table.EndRow()
+
+	for _, template := range templates {
+		var createdAt string
+		if len(template.CreatedAt) > 0 {
+			createdTime, err := time.Parse(time.RFC3339, template.CreatedAt)
+			if err != nil {
+				return fmt.Errorf("could not parse time for '%s': %w", template.UUID, err)
+			}
+			if format != "table" {
+				createdAt = template.CreatedAt
+			} else {
+				createdAt = humanize.Time(createdTime)
+			}
+		}
+
+		if format != "table" {
+			table.AddField(template.UUID, nil)
+		}
+
+		table.AddField(template.Name, nil)
+		table.AddField(createdAt, nil)
+		table.AddField(humanize.IBytes(uint64(template.SizeMB)*humanize.MiByte), nil)
+		table.AddField(humanize.IBytes(uint64(template.FreeMB)*humanize.MiByte), nil)
+
+		var attachedTo []string
+		for _, attch := range template.AttachedTo {
+			if attch.Name != "" {
+				attachedTo = append(attachedTo, attch.Name)
+			} else {
+				attachedTo = append(attachedTo, attch.UUID)
+			}
+		}
+		table.AddField(strings.Join(attachedTo, ","), nil)
+
+		table.AddField(string(template.State), nil)
+		table.AddField(fmt.Sprintf("%t", template.Persistent), nil)
+		table.AddField(template.QuotaPolicy, nil)
+
+		table.EndRow()
+	}
+
+	return table.Render(iostreams.G(ctx).Out)
+}
+
 // PrintAutoscaleConfiguration pretty-prints the provided autoscale configuration or returns
 // an error if unable to send to stdout via the provided context.
 func PrintAutoscaleConfiguration(ctx context.Context, format string, resp kcclient.ServiceResponse[kcautoscale.GetResponseItem]) error {
