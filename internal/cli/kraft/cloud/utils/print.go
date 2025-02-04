@@ -1193,7 +1193,7 @@ func PrettyPrintInstance(ctx context.Context, metro string, instance kcinstances
 		entries...,
 	)
 
-	if instance.State != "running" && instance.State != "starting" && autoStart {
+	if instance.State != "running" && instance.State != "starting" && instance.State != "standby" && autoStart {
 		fmt.Fprintf(out, "\n")
 		log.G(ctx).Info("it looks like the instance did not come online, to view logs run:")
 		fmt.Fprintf(out, "\n    kraft cloud instance logs %s\n\n", instance.Name)
