@@ -102,7 +102,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 	// Set and create the log file for this machine
 	if len(machine.Status.LogFile) == 0 {
-		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "machine.log")
+		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "vm.log")
 	}
 
 	var fstab []string
@@ -143,7 +143,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		machine.Spec.Resources.Requests[corev1.ResourceCPU] = quantity
 	}
 
-	fcLogFile := filepath.Join(machine.Status.StateDir, "firecracker.log")
+	fcLogFile := filepath.Join(machine.Status.StateDir, "vmm.log")
 	fi, err := os.Create(fcLogFile)
 	if err != nil {
 		return machine, err
@@ -152,7 +152,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 	fi.Close()
 
 	fccfg := FirecrackerConfig{
-		SocketPath: filepath.Join(machine.Status.StateDir, "firecracker.sock"),
+		SocketPath: filepath.Join(machine.Status.StateDir, "vmm.sock"),
 		LogPath:    fcLogFile,
 		Memory:     machine.Spec.Resources.Requests.Memory().String(),
 	}
@@ -339,7 +339,7 @@ watch:
 	if service.debug {
 		if _, err := client.PutLogger(ctx, &models.Logger{
 			Level:         firecracker.String("Debug"),
-			LogPath:       firecracker.String(filepath.Join(machine.Status.StateDir, "firecracker.log")),
+			LogPath:       firecracker.String(filepath.Join(machine.Status.StateDir, "vmm.log")),
 			ShowLevel:     firecracker.Bool(true),
 			ShowLogOrigin: firecracker.Bool(true),
 		}); err != nil {

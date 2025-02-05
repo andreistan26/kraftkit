@@ -155,7 +155,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 	// Set and create the log file for this machine
 	if len(machine.Status.LogFile) == 0 {
-		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "machine.log")
+		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "vm.log")
 	}
 
 	if machine.Spec.Resources.Requests == nil {
@@ -199,14 +199,14 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		// Create a QMP connection solely for manipulating the machine
 		WithQMP(QemuHostCharDevUnix{
 			SocketDir: machine.Status.StateDir,
-			Name:      "qemu_control",
+			Name:      "ctrl",
 			NoWait:    true,
 			Server:    true,
 		}),
 		// Create a QMP connection solely for listening to events
 		WithQMP(QemuHostCharDevUnix{
 			SocketDir: machine.Status.StateDir,
-			Name:      "qemu_events",
+			Name:      "evnt",
 			NoWait:    true,
 			Server:    true,
 		}),
@@ -216,7 +216,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		}),
 		WithMonitor(QemuHostCharDevUnix{
 			SocketDir: machine.Status.StateDir,
-			Name:      "qemu_mon",
+			Name:      "mon",
 			NoWait:    true,
 			Server:    true,
 		}),
@@ -469,7 +469,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 	// Create a log file just for the QEMU process which can be used to debug
 	// issues when starting the VMM.
-	qemuLogFile := filepath.Join(machine.Status.StateDir, "qemu.log")
+	qemuLogFile := filepath.Join(machine.Status.StateDir, "vmm.log")
 	fi, err := os.Create(qemuLogFile)
 	if err != nil {
 		return machine, err
