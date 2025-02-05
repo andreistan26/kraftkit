@@ -59,7 +59,7 @@ nfpms:
     maintainer: Alexander Jung <alex@unikraft.io>
     description: Build and use highly customized and ultra-lightweight unikernels.
     license: BSD 3-clause
-    bindir: /usr/local/bin
+    bindir: /usr/bin
     homepage: https://kraftkit.sh
     formats:
       - deb
@@ -80,9 +80,9 @@ nfpms:
       - g++-x86-64-linux-gnu
     contents:
       - src: scripts/kraftld
-        dst: /usr/local/bin/kraftld
-      - src: ./docs/man/
-        dst: /usr/local/share/man/man1/
+        dst: /usr/bin/kraftld
+      - src: docs/man/
+        dst: /usr/share/man/man1/
 
 brews:
   - name: kraftkit-staging
