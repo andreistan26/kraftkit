@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2023, Unikraft GmbH and The KraftKit Authors.
+// Copyright (c) 2025, Unikraft GmbH and The KraftKit Authors.
 // Licensed under the BSD-3-Clause License (the "License").
 // You may not use this file except in compliance with the License.
 
@@ -8,11 +8,9 @@ package create
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	kraftcloud "sdk.kraft.cloud"
 	kcvolumes "sdk.kraft.cloud/volumes"
@@ -27,13 +25,11 @@ type CreateOptions struct {
 	Auth   *config.AuthConfig       `noattribute:"true"`
 	Client kcvolumes.VolumesService `noattribute:"true"`
 	Metro  string                   `noattribute:"true"`
-	Name   string                   `local:"true" long:"name" short:"n" usage:"Name of the volume"`
-	Size   string                   `local:"true" long:"size" short:"s" usage:"Size (MiB increments or suffixes like Mi, Gi, etc.)"`
 	Token  string                   `noattribute:"true"`
 }
 
 // Create a KraftCloud persistent volume.
-func Create(ctx context.Context, opts *CreateOptions) (*kcvolumes.CreateResponseItem, error) {
+func Create(ctx context.Context, opts *CreateOptions, args []string) ([]kcvolumes.TemplateCreateResponseItem, error) {
 	var err error
 
 	if opts == nil {
@@ -53,27 +49,11 @@ func Create(ctx context.Context, opts *CreateOptions) (*kcvolumes.CreateResponse
 		)
 	}
 
-	if _, err := strconv.ParseUint(opts.Size, 10, 64); err == nil {
-		opts.Size = fmt.Sprintf("%sMi", opts.Size)
-	}
-
-	qty, err := resource.ParseQuantity(opts.Size)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse size quantity: %w", err)
-	}
-
-	if qty.Value() < 1024*1024 {
-		return nil, fmt.Errorf("size must be at least 1Mi")
-	}
-
-	// Convert to MiB
-	sizeMB := int(qty.Value() / (1024 * 1024))
-
-	createResp, err := opts.Client.WithMetro(opts.Metro).Create(ctx, opts.Name, sizeMB)
+	createResp, err := opts.Client.WithMetro(opts.Metro).CreateTemplate(ctx, args...)
 	if err != nil {
 		return nil, fmt.Errorf("creating volume: %w", err)
 	}
-	create, err := createResp.FirstOrErr()
+	create, err := createResp.AllOrErr()
 	if err != nil {
 		return nil, fmt.Errorf("creating volume: %w", err)
 	}
@@ -83,22 +63,22 @@ func Create(ctx context.Context, opts *CreateOptions) (*kcvolumes.CreateResponse
 
 func NewCmd() *cobra.Command {
 	cmd, err := cmdfactory.New(&CreateOptions{}, cobra.Command{
-		Short:   "Create a persistent volume",
-		Use:     "create [FLAGS]",
-		Args:    cobra.NoArgs,
+		Short:   "Create volume template(s)",
+		Use:     "create [FLAGS] NAME|UUID[,NAME|UUID...]",
+		Args:    cobra.MinimumNArgs(1),
 		Aliases: []string{"crt"},
 		Long: heredoc.Doc(`
 			Create a new persistent volume.
 		`),
 		Example: heredoc.Doc(`
-			# Create a new persistent 100MiB volume named "my-volume"
-			$ kraft cloud volume create --size 100 --name my-volume
+			# Create a new volume template from "my-volume" volume
+			$ kraft cloud volume template create my-volume
 
-			# Create a new persistent 10MiB volume with a random name
-			$ kraft cloud volume create --size 10Mi
+			# Create two new volume templates from "my-volume" and "my-other-volume" volumes
+			$ kraft cloud volume template create my-volume my-other-volume
 		`),
 		Annotations: map[string]string{
-			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume",
+			cmdfactory.AnnotationHelpGroup: "kraftcloud-volume-template",
 		},
 	})
 	if err != nil {
@@ -109,10 +89,6 @@ func NewCmd() *cobra.Command {
 }
 
 func (opts *CreateOptions) Pre(cmd *cobra.Command, _ []string) error {
-	if opts.Size == "" {
-		return fmt.Errorf("must specify --size flag")
-	}
-
 	err := utils.PopulateMetroToken(cmd, &opts.Metro, &opts.Token)
 	if err != nil {
 		return fmt.Errorf("could not populate metro and token: %w", err)
@@ -121,12 +97,15 @@ func (opts *CreateOptions) Pre(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func (opts *CreateOptions) Run(ctx context.Context, _ []string) error {
-	volume, err := Create(ctx, opts)
+func (opts *CreateOptions) Run(ctx context.Context, args []string) error {
+	templates, err := Create(ctx, opts, args)
 	if err != nil {
-		return fmt.Errorf("could not create volume: %w", err)
+		return fmt.Errorf("could not create volume template(s): %w", err)
 	}
 
-	_, err = fmt.Fprintln(iostreams.G(ctx).Out, volume.UUID)
+	for _, template := range templates {
+		_, err = fmt.Fprintln(iostreams.G(ctx).Out, template.UUID)
+	}
+
 	return err
 }

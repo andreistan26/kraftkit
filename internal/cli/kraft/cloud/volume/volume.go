@@ -13,12 +13,14 @@ import (
 	"github.com/spf13/pflag"
 
 	"kraftkit.sh/internal/cli/kraft/cloud/volume/attach"
+	"kraftkit.sh/internal/cli/kraft/cloud/volume/clone"
 	"kraftkit.sh/internal/cli/kraft/cloud/volume/create"
 	"kraftkit.sh/internal/cli/kraft/cloud/volume/detach"
 	"kraftkit.sh/internal/cli/kraft/cloud/volume/get"
 	vimport "kraftkit.sh/internal/cli/kraft/cloud/volume/import"
 	"kraftkit.sh/internal/cli/kraft/cloud/volume/list"
 	"kraftkit.sh/internal/cli/kraft/cloud/volume/remove"
+	"kraftkit.sh/internal/cli/kraft/cloud/volume/template"
 
 	"kraftkit.sh/cmdfactory"
 )
@@ -46,11 +48,15 @@ func NewCmd() *cobra.Command {
 
 	cmd.AddCommand(attach.NewCmd())
 	cmd.AddCommand(detach.NewCmd())
+	cmd.AddCommand(clone.NewCmd())
 	cmd.AddCommand(create.NewCmd())
 	cmd.AddCommand(list.NewCmd())
 	cmd.AddCommand(remove.NewCmd())
 	cmd.AddCommand(get.NewCmd())
 	cmd.AddCommand(vimport.NewCmd())
+
+	cmd.AddGroup(&cobra.Group{ID: "kraftcloud-volume-template", Title: "TEMPLATE COMMANDS"})
+	cmd.AddCommand(template.NewCmd())
 
 	return cmd
 }
