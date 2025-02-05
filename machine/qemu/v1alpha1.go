@@ -25,13 +25,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/types"
 
 	machinev1alpha1 "kraftkit.sh/api/machine/v1alpha1"
 	"kraftkit.sh/config"
 	"kraftkit.sh/exec"
 	"kraftkit.sh/internal/logtail"
 	"kraftkit.sh/internal/retrytimeout"
+	"kraftkit.sh/machine/name"
 	"kraftkit.sh/machine/network/macaddr"
 	"kraftkit.sh/machine/qemu/qmp"
 	qmpapi "kraftkit.sh/machine/qemu/qmp/v7alpha2"
@@ -140,7 +141,12 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 	}
 
 	if machine.ObjectMeta.UID == "" {
-		machine.ObjectMeta.UID = uuid.NewUUID()
+		machineID, err := name.NewRandomMachineID()
+		if err != nil {
+			return nil, fmt.Errorf("could not generate machine UID: %w", err)
+		}
+
+		machine.ObjectMeta.UID = types.UID(machineID.ShortString())
 	}
 
 	machine.Status.State = machinev1alpha1.MachineStateUnknown
