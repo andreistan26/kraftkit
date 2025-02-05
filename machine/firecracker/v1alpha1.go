@@ -22,7 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/types"
 
 	machinev1alpha1 "kraftkit.sh/api/machine/v1alpha1"
 	"kraftkit.sh/config"
@@ -30,6 +30,7 @@ import (
 	"kraftkit.sh/internal/logtail"
 	"kraftkit.sh/internal/run"
 	"kraftkit.sh/log"
+	"kraftkit.sh/machine/name"
 	"kraftkit.sh/machine/network/macaddr"
 	"kraftkit.sh/unikraft/export/v0/posixenviron"
 	"kraftkit.sh/unikraft/export/v0/ukargparse"
@@ -87,7 +88,12 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 	}
 
 	if machine.ObjectMeta.UID == "" {
-		machine.ObjectMeta.UID = uuid.NewUUID()
+		machineID, err := name.NewRandomMachineID()
+		if err != nil {
+			return nil, fmt.Errorf("could not generate machine UID: %w", err)
+		}
+
+		machine.ObjectMeta.UID = types.UID(machineID.ShortString())
 	}
 
 	machine.Status.State = machinev1alpha1.MachineStateUnknown
@@ -102,7 +108,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 	// Set and create the log file for this machine
 	if len(machine.Status.LogFile) == 0 {
-		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "machine.log")
+		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "vm.log")
 	}
 
 	var fstab []string
@@ -143,7 +149,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		machine.Spec.Resources.Requests[corev1.ResourceCPU] = quantity
 	}
 
-	fcLogFile := filepath.Join(machine.Status.StateDir, "firecracker.log")
+	fcLogFile := filepath.Join(machine.Status.StateDir, "vmm.log")
 	fi, err := os.Create(fcLogFile)
 	if err != nil {
 		return machine, err
@@ -152,7 +158,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 	fi.Close()
 
 	fccfg := FirecrackerConfig{
-		SocketPath: filepath.Join(machine.Status.StateDir, "firecracker.sock"),
+		SocketPath: filepath.Join(machine.Status.StateDir, "vmm.sock"),
 		LogPath:    fcLogFile,
 		Memory:     machine.Spec.Resources.Requests.Memory().String(),
 	}
@@ -339,7 +345,7 @@ watch:
 	if service.debug {
 		if _, err := client.PutLogger(ctx, &models.Logger{
 			Level:         firecracker.String("Debug"),
-			LogPath:       firecracker.String(filepath.Join(machine.Status.StateDir, "firecracker.log")),
+			LogPath:       firecracker.String(filepath.Join(machine.Status.StateDir, "vmm.log")),
 			ShowLevel:     firecracker.Bool(true),
 			ShowLogOrigin: firecracker.Bool(true),
 		}); err != nil {

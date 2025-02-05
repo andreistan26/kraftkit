@@ -13,13 +13,14 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/types"
 
 	machineapi "kraftkit.sh/api/machine/v1alpha1"
 	volumeapi "kraftkit.sh/api/volume/v1alpha1"
 	"kraftkit.sh/config"
 	"kraftkit.sh/initrd"
 	"kraftkit.sh/log"
+	"kraftkit.sh/machine/name"
 	"kraftkit.sh/pack"
 	"kraftkit.sh/packmanager"
 	"kraftkit.sh/tui/paraprogress"
@@ -237,7 +238,12 @@ func (runner *runnerPackage) Prepare(ctx context.Context, opts *RunOptions, mach
 
 	// Pre-emptively prepare the UID so that we can extract the kernel to the
 	// defined state directory.
-	machine.ObjectMeta.UID = uuid.NewUUID()
+	machineID, err := name.NewRandomMachineID()
+	if err != nil {
+		return fmt.Errorf("could not generate machine UID: %w", err)
+	}
+
+	machine.ObjectMeta.UID = types.UID(machineID.ShortString())
 	machine.Status.StateDir = filepath.Join(config.G[config.KraftKit](ctx).RuntimeDir, string(machine.ObjectMeta.UID))
 	if err := os.MkdirAll(machine.Status.StateDir, fs.ModeSetgid|0o775); err != nil {
 		return err

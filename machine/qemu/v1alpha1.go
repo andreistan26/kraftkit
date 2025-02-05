@@ -25,13 +25,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
+	"k8s.io/apimachinery/pkg/types"
 
 	machinev1alpha1 "kraftkit.sh/api/machine/v1alpha1"
 	"kraftkit.sh/config"
 	"kraftkit.sh/exec"
 	"kraftkit.sh/internal/logtail"
 	"kraftkit.sh/internal/retrytimeout"
+	"kraftkit.sh/machine/name"
 	"kraftkit.sh/machine/network/macaddr"
 	"kraftkit.sh/machine/qemu/qmp"
 	qmpapi "kraftkit.sh/machine/qemu/qmp/v7alpha2"
@@ -140,7 +141,12 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 	}
 
 	if machine.ObjectMeta.UID == "" {
-		machine.ObjectMeta.UID = uuid.NewUUID()
+		machineID, err := name.NewRandomMachineID()
+		if err != nil {
+			return nil, fmt.Errorf("could not generate machine UID: %w", err)
+		}
+
+		machine.ObjectMeta.UID = types.UID(machineID.ShortString())
 	}
 
 	machine.Status.State = machinev1alpha1.MachineStateUnknown
@@ -155,7 +161,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 	// Set and create the log file for this machine
 	if len(machine.Status.LogFile) == 0 {
-		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "machine.log")
+		machine.Status.LogFile = filepath.Join(machine.Status.StateDir, "vm.log")
 	}
 
 	if machine.Spec.Resources.Requests == nil {
@@ -199,14 +205,14 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		// Create a QMP connection solely for manipulating the machine
 		WithQMP(QemuHostCharDevUnix{
 			SocketDir: machine.Status.StateDir,
-			Name:      "qemu_control",
+			Name:      "ctrl",
 			NoWait:    true,
 			Server:    true,
 		}),
 		// Create a QMP connection solely for listening to events
 		WithQMP(QemuHostCharDevUnix{
 			SocketDir: machine.Status.StateDir,
-			Name:      "qemu_events",
+			Name:      "evnt",
 			NoWait:    true,
 			Server:    true,
 		}),
@@ -216,7 +222,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 		}),
 		WithMonitor(QemuHostCharDevUnix{
 			SocketDir: machine.Status.StateDir,
-			Name:      "qemu_mon",
+			Name:      "mon",
 			NoWait:    true,
 			Server:    true,
 		}),
@@ -469,7 +475,7 @@ func (service *machineV1alpha1Service) Create(ctx context.Context, machine *mach
 
 	// Create a log file just for the QEMU process which can be used to debug
 	// issues when starting the VMM.
-	qemuLogFile := filepath.Join(machine.Status.StateDir, "qemu.log")
+	qemuLogFile := filepath.Join(machine.Status.StateDir, "vmm.log")
 	fi, err := os.Create(qemuLogFile)
 	if err != nil {
 		return machine, err
